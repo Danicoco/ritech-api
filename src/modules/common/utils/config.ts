@@ -17,7 +17,6 @@ export const configs = {
     PORT: getEnv("PORT"),
     DB_NAME: getEnv("DB_NAME"),
     NODE_ENV: getEnv("NODE_ENV"),
-    KUDA_EMAIL: getEnv("KUDA_EMAIL"),
     BACKEND_URL: getEnv("BACKEND_URL"),
     ENCRYPTIONIV: getEnv("ENCRYPTIONIV"),
     MONGO_DB_URL: getEnv("MONGO_DB_URL"),

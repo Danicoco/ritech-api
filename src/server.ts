@@ -7,7 +7,6 @@ import { createServer } from "http"
 import compression from "compression"
 import rateLimit from "express-rate-limit"
 
-import "./modules/common/cron"
 import routes from "./routes"
 import { errorHandler } from "./modules/common/utils"
 
@@ -24,14 +23,7 @@ const apiLimiter = rateLimit({
 app.use(helmet())
 app.use(compression())
 
-app.use(
-    cors({
-        origin: (_origin, callback) => {
-            callback(null, true)
-        },
-        credentials: true,
-    })
-)
+app.use(cors({}))
 
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 app.use(express.json({ limit: "10mb" }))
