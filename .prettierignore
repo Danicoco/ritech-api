@@ -1,0 +1,8 @@
+build
+coverage
+swaggerTypes.ts
+swagger.ts
+**/.git
+**/.svn
+**/.hg
+**/node_modules

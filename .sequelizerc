@@ -1,0 +1,11 @@
+require('dotenv').config();
+const path = require('path');
+
+const { NODE_ENV } = process.env;
+
+module.exports = {
+  "models-path": path.resolve('./src/database/postgres/models'),
+  "seeders-path": path.resolve('./src/database/seeders'),
+  "config": path.resolve('./src/database/postgres/config/conf.js'),
+  "migrations-path": NODE_ENV === "production" ? path.resolve('./src/database/postgres/prod-migrations') : path.resolve('./src/database/postgres/migrations'),
+};
