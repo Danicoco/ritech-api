@@ -12,7 +12,6 @@ import { randomInt } from "node:crypto"
 import db from "../../../database/postgres/models"
 import { Transaction } from "sequelize"
 import TradeCopier from "../../thirdpartyApi/trade-copier"
-import { configs } from "../../common/utils/config"
 
 export const create = async (
     req: Request,
@@ -328,69 +327,33 @@ export const get = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
-export const slaveAccount = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const [account, accountError] = await tryPromise(
-            new TradeCopier().createAccount(
-                {
-                    name: `${req.user.firstName} ${req.user.lastName}`,
-                    broker: "mt4",
-                    login: configs.TRADE_COPIER_LOGIN,
-                    password: configs.TRADE_COPIER_PASSWORD,
-                    server: "FxPro.com-Real02",
-                    environment: req.body.demo ? "Demo" : "Real",
-                    status: "1", //The account is 0=disabled, 1=enabled
-                    subscription: "auto",
-                    pending: "1",
-                    stop_loss: "1",
-                    take_profit: "1",
-                    comment: "Provided by Ritech",
-                    alert_email: "1",
-                    alert_sms: "0",
-                },
-                "slave"
-            )
-        )
-
-        if (accountError) {
-            throw catchError("Error creating your slave account")
-        }
-
-        let [user, error] = await tryPromise(
-            new UserService({ id: req.user.id }).update({ meta: account })
-        )
-        if (error) throw catchError("Error processing your request", 400)
-
-        delete user?.password
-
-        return res
-            .status(200)
-            .json(success("Slave account created successfully", user))
-    } catch (error) {
-        next(error)
-    }
-}
-
 export const createMasterAccount = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    const { name, demo, stopLoss, takeProfit, comment, emailAlert, smsAlert } =
-        req.body
+    const {
+        name,
+        demo,
+        stopLoss,
+        takeProfit,
+        comment,
+        emailAlert,
+        smsAlert,
+        login,
+        password,
+        broker,
+        server,
+    } = req.body
     try {
         const [account, accountError] = await tryPromise(
             new TradeCopier().createAccount(
                 {
                     name,
-                    broker: "mt4",
-                    login: configs.TRADE_COPIER_LOGIN,
-                    password: configs.TRADE_COPIER_PASSWORD,
-                    server: "FxPro.com-Real02",
+                    broker,
+                    login,
+                    password,
+                    server,
                     environment: demo ? "Demo" : "Real",
                     status: "1", //The account is 0=disabled, 1=enabled
                     subscription: "auto",
@@ -418,7 +381,7 @@ export const createMasterAccount = async (
 
         return res
             .status(200)
-            .json(success("Slave account created successfully", user))
+            .json(success("Copier account created successfully", user))
     } catch (error) {
         next(error)
     }

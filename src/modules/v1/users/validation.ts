@@ -30,7 +30,7 @@ export const updateProfileSchema = [
     body('hasMFA').isBoolean().withMessage('Select a valid hasMFA').optional(),
 ]
 
-export const createMasterAccountSchema = [
+export const createCopierSchema = [
     body("demo").isBoolean().withMessage("Is this for demo account?").notEmpty().withMessage("Is this for demo account?"),
     body("name").isString().withMessage("Enter name").notEmpty().withMessage("Enter name"),
     body("stopLoss").isBoolean().withMessage("Enter StopLoss").notEmpty().withMessage("Enter StopLoss"),
@@ -38,4 +38,8 @@ export const createMasterAccountSchema = [
     body("comment").isString().withMessage("Enter comment").notEmpty().withMessage("Enter comment"),
     body("emailAlert").isString().withMessage("Enter emailAlert").notEmpty().withMessage("Enter emailAlert"),
     body("smsAlert").isString().withMessage("Enter smsAlert").notEmpty().withMessage("Enter smsAlert"),
+    body("login").isString().withMessage("Enter login").notEmpty().withMessage("Enter login"),
+    body("password").isString().withMessage("Enter password").notEmpty().withMessage("Enter password"),
+    body("broker").isString().withMessage("Enter broker").notEmpty().withMessage("Enter broker"),
+    body("server").isString().withMessage("Enter server").notEmpty().withMessage("Enter server"),
 ]

@@ -2,6 +2,7 @@
 
 import { Router } from "express"
 import {
+    createCopierSchema,
     createSchema,
     forgetPasswordSchema,
     loginSchema,
@@ -19,7 +20,6 @@ import {
     login,
     remove,
     resendOTP,
-    slaveAccount,
     update,
     validateOTP,
     verifyLogin,
@@ -43,7 +43,6 @@ userRouter.post("/verify-login", validateOtpSchema, validate, verifyLogin)
 userRouter.patch("/profile", Authenticate, updateProfileSchema, validate, update)
 userRouter.delete("/", Authenticate, remove)
 userRouter.get("/profile", Authenticate, get)
-userRouter.post("/create-slave-account", Authenticate, slaveAccount)
-userRouter.post("/create-master-account", Authenticate, createMasterAccount)
+userRouter.post("/copier-account", Authenticate, createCopierSchema, validate, createMasterAccount)
 
 export default userRouter

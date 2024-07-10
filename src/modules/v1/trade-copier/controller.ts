@@ -30,17 +30,17 @@ export const fetchPosition = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { page = 1, limit = 10, type } = req.query
+    const { start = 1, length = 10, type } = req.query
     try {
         const [positions, error] = await tryPromise(
             type === "close"
                 ? new TradeCopier().getClosedPositions({
-                      start: Number(page),
-                      length: Number(limit),
+                      start: Number(start),
+                      length: Number(length),
                   })
                 : new TradeCopier().getOpenPositions({
-                      start: Number(page),
-                      length: Number(limit),
+                      start: Number(start),
+                      length: Number(length),
                   })
         )
 
@@ -133,5 +133,127 @@ export const addFilters = async (
         )
     } catch (error) {
         next(error)       
+    }
+}
+
+export const getReports = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { start, length } = req.query;
+    try {
+        const [reports, error] = await tryPromise(
+            new TradeCopier().getReporting({ start: Number(start), length: Number(length) })
+        );
+
+        if (error) {
+            throw catchError('Error getting report', 500)
+        }
+
+        return res.status(200).json(
+            success('Reports retrieved successfuly', reports)
+        )
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getMasterOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { start, length } = req.query;
+    try {
+        const [orders, error] = await tryPromise(
+            new TradeCopier().getMasterOrders({ start: Number(start), length: Number(length) })
+        );
+
+        if (error) {
+            throw catchError('Error getting master order', 500)
+        }
+
+        return res.status(200).json(
+            success('Master orders retrieved successfuly', orders)
+        )
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getSlaveOrder = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { start, length, master_order_id } = req.query;
+    try {
+        const [orders, error] = await tryPromise(
+            new TradeCopier().getSlaveOrders({ start: Number(start), length: Number(length), master_order_id: String(master_order_id) })
+        );
+
+        if (error) {
+            throw catchError('Error getting master order', 500)
+        }
+
+        return res.status(200).json(
+            success('Master orders retrieved successfuly', orders)
+        )
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getWalletDeposits = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const [deposits, error] = await tryPromise(
+            new TradeCopier().getEwalletDeposits({})
+        );
+
+        if (error) {
+            throw catchError('Error getting wallet deposits', 500)
+        }
+
+        return res.status(200).json(
+            success('Wallet retrieved successfuly', deposits)
+        )
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getFees = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const {
+        amount,
+        date_fees,
+        message
+    } = req.body
+    try {
+        const [deposits, error] = await tryPromise(
+            new TradeCopier().getFees({
+                amount,
+                date_fees,
+                message
+            })
+        );
+
+        if (error) {
+            throw catchError('Error getting wallet deposits', 500)
+        }
+
+        return res.status(200).json(
+            success('Wallet retrieved successfuly', deposits)
+        )
+    } catch (error) {
+        next(error);
     }
 }
