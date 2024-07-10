@@ -42,4 +42,5 @@ export const createCopierSchema = [
     body("password").isString().withMessage("Enter password").notEmpty().withMessage("Enter password"),
     body("broker").isString().withMessage("Enter broker").notEmpty().withMessage("Enter broker"),
     body("server").isString().withMessage("Enter server").notEmpty().withMessage("Enter server"),
+    body("type").isIn(['slave', 'master']).withMessage("Is this a slave or master account?").notEmpty().withMessage("Is this a slave or master account?"),
 ]

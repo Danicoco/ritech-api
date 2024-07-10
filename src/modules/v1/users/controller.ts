@@ -344,6 +344,7 @@ export const createMasterAccount = async (
         password,
         broker,
         server,
+        type
     } = req.body
     try {
         const [account, accountError] = await tryPromise(
@@ -364,7 +365,7 @@ export const createMasterAccount = async (
                     alert_email: emailAlert ? "1" : "0",
                     alert_sms: smsAlert ? "1" : "0",
                 },
-                "slave"
+                type
             )
         )
 
