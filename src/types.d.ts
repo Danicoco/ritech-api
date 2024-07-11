@@ -173,8 +173,7 @@ type CreateErr = (message: string, code?: number, validations?: object) => Error
 
 declare module "express-serve-static-core" {
     export interface Request {
-        user: UserToken
-        admin: Partial<IAdmin>
+        user: IUser
     }
 }
 
