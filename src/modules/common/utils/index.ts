@@ -43,17 +43,13 @@ export const Authenticate = (
         const token = tokenKey?.split(" ")[1]
         if (!token) throw catchError("No Authorization header provided", 401)
 
-        const user = jose.decodeJwt(token) as unknown as IUser & { exp: Date, isAdmin: boolean }
+        const user = jose.decodeJwt(token) as unknown as IUser & { exp: Date}
 
         if (isAfter(user.exp, new Date())) {
             throw catchError("Session expired.")
         }
 
-        if (!user.isAdmin) {
-            req.user = user as IUser
-        } else {
-            req.admin = user as Partial<IUser>
-        }
+        req.user = user
 
         return next()
     } catch (error) {
