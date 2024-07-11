@@ -347,6 +347,9 @@ export const createMasterAccount = async (
         type
     } = req.body
     try {
+        if (type === "master" && !req.user.isAdmin) {
+            throw catchError('Invalid Operation')
+        }
         const [account, accountError] = await tryPromise(
             new TradeCopier().createAccount(
                 {
