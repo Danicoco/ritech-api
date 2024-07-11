@@ -48,11 +48,14 @@ export const create = async (
 
         await transaction.commit()
 
-        delete user?.password
+        let [userExist] = await tryPromise(
+            new UserService({ email: user?.email }).findOne()
+        )
+        delete userExist?.password
 
         const token = await tokenize({
-            ...user,
-            isAdmin: false,
+            ...userExist,
+            isAdmin: userExist?.isAdmin || false,
         })
 
         return res
@@ -60,7 +63,7 @@ export const create = async (
             .json(
                 success(
                     "Account created successfully",
-                    { ...user, plainOtp: otp },
+                    { user: userExist, plainOtp: otp },
                     { token }
                 )
             )
