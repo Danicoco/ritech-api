@@ -379,6 +379,10 @@ export const createMasterAccount = async (
             throw catchError("Error creating your slave account")
         }
 
+        if (account.error) {
+            throw catchError(account.error)
+        }
+
         let [user, error] = await tryPromise(
             new UserService({ id: req.user.id }).update({ meta: account })
         )

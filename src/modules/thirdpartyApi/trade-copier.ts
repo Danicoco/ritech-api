@@ -25,6 +25,17 @@ class TradeCopier {
         })
     constructor() {}
 
+    private getBody(body: any) {
+        return Object.keys(body)
+            .map(
+                key =>
+                    encodeURIComponent(key) +
+                    "=" +
+                    encodeURIComponent(body[key])
+            )
+            .join("&")
+    }
+
     public async createAccount(
         payload: ITradeCopierAccount,
         type: "master" | "slave"
@@ -32,10 +43,10 @@ class TradeCopier {
         const body = {
             type: type === "master" ? 0 : 1,
             ...payload,
-        }
+        } as any
 
         const { data } = await this.http()
-            .post("/account/addAccount.php", body)
+            .post("/account/addAccount.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -49,7 +60,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/account/deleteAccount.php", body)
+            .post("/account/deleteAccount.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -63,7 +74,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/account/getAccounts.php", body)
+            .post("/account/getAccounts.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -72,10 +83,8 @@ class TradeCopier {
     }
 
     public async updateAccount(payload: ITradeCopierAccount) {
-        const body = payload
-
         const { data } = await this.http()
-            .post("/account/updateAccount.php", body)
+            .post("/account/updateAccount.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -89,7 +98,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/subscription/getSubscriptions.php", body)
+            .post("/subscription/getSubscriptions.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -109,7 +118,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/settings/getSettings.php", body)
+            .post("/settings/getSettings.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -123,7 +132,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/settings/setSettings.php", body)
+            .post("/settings/setSettings.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -137,7 +146,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/mapping/addMappings.php", body)
+            .post("/mapping/addMappings.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -153,7 +162,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/mapping/deleteAllMappings.php", body)
+            .post("/mapping/deleteAllMappings.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -167,7 +176,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/mapping/deleteMapping.php", body)
+            .post("/mapping/deleteMapping.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -181,7 +190,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/mapping/editMapping.php", body)
+            .post("/mapping/editMapping.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -195,7 +204,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/protection/setGlobalProtection.php", body)
+            .post("/protection/setGlobalProtection.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -209,7 +218,7 @@ class TradeCopier {
         }
 
         const { data } = await this.http()
-            .post("/protection/getGlobalProtection.php", body)
+            .post("/protection/getGlobalProtection.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -219,7 +228,7 @@ class TradeCopier {
 
     public async addFilters(payload: ITradeCopierFilters) {
         const { data } = await this.http()
-            .post("/filter/addFiltersSymbol.php", payload)
+            .post("/filter/addFiltersSymbol.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -229,7 +238,7 @@ class TradeCopier {
 
     public async editFilters(payload: ITradeCopierFilters) {
         const { data } = await this.http()
-            .post("/filter/editFiltersSymbol.php", payload)
+            .post("/filter/editFiltersSymbol.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -239,7 +248,7 @@ class TradeCopier {
 
     public async getFilters(payload: ITradeCopierFilters) {
         const { data } = await this.http()
-            .post("/filter/getFiltersSymbols.php", payload)
+            .post("/filter/getFiltersSymbols.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -249,7 +258,7 @@ class TradeCopier {
 
     public async deleteFilters(payload: { user_id: string; symbol: string }) {
         const { data } = await this.http()
-            .post("/filter/deleteFiltersSymbol.php", payload)
+            .post("/filter/deleteFiltersSymbol.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -259,7 +268,7 @@ class TradeCopier {
 
     public async addTemplate(payload: { name: string }) {
         const { data } = await this.http()
-            .post("/template/addTemplate.php", payload)
+            .post("/template/addTemplate.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -269,7 +278,7 @@ class TradeCopier {
 
     public async editTemplate(payload: { name: string; group_id: string }) {
         const { data } = await this.http()
-            .post("/template/editTemplate.php", payload)
+            .post("/template/editTemplate.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -279,7 +288,7 @@ class TradeCopier {
 
     public async getTemplate(payload: { name: string; group_id: string }) {
         const { data } = await this.http()
-            .post("/template/getTemplates.php", payload)
+            .post("/template/getTemplates.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -289,7 +298,7 @@ class TradeCopier {
 
     public async deleteTemplates(payload: { group_id: string }) {
         const { data } = await this.http()
-            .post("/template/deleteTemplate.php", payload)
+            .post("/template/deleteTemplate.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -299,7 +308,7 @@ class TradeCopier {
 
     public async getOrderStatusComment(payload: { comment: string }) {
         const { data } = await this.http()
-            .post("/order/getOrderStatusComment.php", payload)
+            .post("/order/getOrderStatusComment.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -313,7 +322,7 @@ class TradeCopier {
         master_order_id?: string
     }) {
         const { data } = await this.http()
-            .post("/order/getSlaveOrders.php", payload)
+            .post("/order/getSlaveOrders.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -323,7 +332,7 @@ class TradeCopier {
 
     public async getMasterOrders(payload: { start: number; length: number }) {
         const { data } = await this.http()
-            .post("/order/getMasterOrders.php", payload)
+            .post("/order/getMasterOrders.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -336,7 +345,7 @@ class TradeCopier {
         length: number
     }) {
         const { data } = await this.http()
-            .post("/position/getClosedPositions.php", payload)
+            .post("/position/getClosedPositions.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -346,7 +355,7 @@ class TradeCopier {
 
     public async getOpenPositions(payload: { start: number; length: number }) {
         const { data } = await this.http()
-            .post("/position/getOpenPositions.php", payload)
+            .post("/position/getOpenPositions.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -356,7 +365,7 @@ class TradeCopier {
 
     public async getReporting(payload: { start: number; length: number }) {
         const { data } = await this.http()
-            .post("/reporting/getReporting.php", payload)
+            .post("/reporting/getReporting.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -366,7 +375,7 @@ class TradeCopier {
 
     public async getEwalletDeposits(payload: {}) {
         const { data } = await this.http()
-            .post("/deposit/getEwalletDeposits.php", payload)
+            .post("/deposit/getEwalletDeposits.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -380,7 +389,7 @@ class TradeCopier {
         message: "DAILY_FEES" | "DAILY_ORDER" | "DAILY_UPDATE"
     }) {
         const { data } = await this.http()
-            .post("/fee/getFees.php", payload)
+            .post("/fee/getFees.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
@@ -395,7 +404,7 @@ class TradeCopier {
         text: string
     }) {
         const { data } = await this.http()
-            .post("/notification/getNotifications.php", payload)
+            .post("/notification/getNotifications.php", this.getBody(payload))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
