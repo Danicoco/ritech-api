@@ -43,15 +43,17 @@ class TradeCopier {
         const body = {
             type: type === "master" ? 0 : 1,
             ...payload,
-        } as any
+        } as any;
 
-        const { data } = await this.http()
+        const data = await this.http()
             .post("/account/addAccount.php", this.getBody(body))
             .catch((e: AxiosError) => {
                 throw catchError(e.response?.data.message)
             })
 
-        return data
+        console.log(data);
+
+        return data.data
     }
 
     public async deleteAccount(account_id: string) {

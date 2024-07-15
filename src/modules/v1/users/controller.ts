@@ -12,6 +12,7 @@ import { randomInt } from "node:crypto"
 import db from "../../../database/postgres/models"
 import { Transaction } from "sequelize"
 import TradeCopier from "../../thirdpartyApi/trade-copier"
+import { configs } from "../../common/utils/config"
 
 export const create = async (
     req: Request,
@@ -363,7 +364,7 @@ export const createMasterAccount = async (
                     server,
                     environment: demo ? "Demo" : "Real",
                     status: "1", //The account is 0=disabled, 1=enabled
-                    subscription: "auto",
+                    subscription: configs.TRADE_COPIER_SUB,
                     pending: "1",
                     stop_loss: stopLoss ? "1" : "0",
                     take_profit: takeProfit ? "1" : "0",
