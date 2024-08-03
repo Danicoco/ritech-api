@@ -5,6 +5,9 @@ import { Sequelize } from "sequelize"
 import dbconfig from "../config/config"
 
 import User from "./user"
+import Plan from "./plan"
+import Card from "./card"
+import Subscription from "./subscription"
 
 const { NODE_ENV = "development" } = process.env
 
@@ -29,7 +32,9 @@ const db = {
     sequelize,
     Sequelize,
     user: User(sequelize),
-    // transaction: Transaction(sequelize),
+    plan: Plan(sequelize),
+    card: Card(sequelize),
+    subscription: Subscription(sequelize)
 }
 
 Object.keys(db).forEach((modelName: string) => {

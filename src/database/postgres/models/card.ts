@@ -3,13 +3,13 @@
 import { Model, DataTypes, Sequelize } from "sequelize"
 import { makePaginate } from "sequelize-cursor-pagination"
 
-import { IUser } from "../../../types"
+import { ICard } from "../../../types"
 
-interface UserInstance extends Model<IUser>, IUser {}
+interface CardInstance extends Model<ICard>, ICard {}
 
-export default function User(sequelize: Sequelize) {
-    const User = sequelize.define<UserInstance, IUser>(
-        "ritech-users",
+export default function Card(sequelize: Sequelize) {
+    const Card = sequelize.define<CardInstance, ICard>(
+        "ritech-cards",
         {
             id: {
                 unique: true,
@@ -23,48 +23,43 @@ export default function User(sequelize: Sequelize) {
                     },
                 },
             },
-            firstName: {
+            name: {
                 allowNull: false,
                 type: DataTypes.STRING,
             },
-            lastName: {
+            bin: {
                 allowNull: false,
                 type: DataTypes.STRING,
             },
-            email: {
-                allowNull: false,
-                unique: true,
+            type: {
                 type: DataTypes.STRING,
             },
-            phoneNumber: {
-                allowNull: false,
-                unique: true,
+            bank: {
                 type: DataTypes.STRING,
             },
-            password: {
-                allowNull: false,
+            userId: {
                 type: DataTypes.STRING,
             },
-            otp: {
-                allowNull: false,
+            lastFour: {
                 type: DataTypes.STRING,
             },
-            subscriptionId: {
-                type: DataTypes.STRING,
-            },
-            hasMFA: {
-                allowNull: false,
-                defaultValue: false,
+            reusable: {
                 type: DataTypes.BOOLEAN,
             },
-            isAdmin: {
-                allowNull: false,
-                defaultValue: false,
+            signature: {
+                type: DataTypes.STRING,
+            },
+            isActive: {
                 type: DataTypes.BOOLEAN,
             },
-            meta: {
-                allowNull: true,
-                type: DataTypes.JSON,
+            expiryDate: {
+                type: DataTypes.STRING,
+            },
+            countryCode: {
+                type: DataTypes.STRING,
+            },
+            authorizationCode: {
+                type: DataTypes.STRING,
             },
             createdAt: {
                 allowNull: false,
@@ -82,11 +77,11 @@ export default function User(sequelize: Sequelize) {
             paranoid: true,
             updatedAt: true,
             deletedAt: true,
-            indexes: [{ fields: ["id", "phoneNumber", "email"] }],
+            indexes: [{ fields: ["id", "userId"] }],
         }
     )
 
     //@ts-ignore
-    User.paginate = makePaginate(User)
-    return User
+    Card.paginate = makePaginate(Card)
+    return Card
 }

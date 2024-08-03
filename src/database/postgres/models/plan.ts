@@ -3,13 +3,13 @@
 import { Model, DataTypes, Sequelize } from "sequelize"
 import { makePaginate } from "sequelize-cursor-pagination"
 
-import { IUser } from "../../../types"
+import { IPlan } from "../../../types"
 
-interface UserInstance extends Model<IUser>, IUser {}
+interface PlanInstance extends Model<IPlan>, IPlan {}
 
-export default function User(sequelize: Sequelize) {
-    const User = sequelize.define<UserInstance, IUser>(
-        "ritech-users",
+export default function Plan(sequelize: Sequelize) {
+    const Plan = sequelize.define<PlanInstance, IPlan>(
+        "ritech-plans",
         {
             id: {
                 unique: true,
@@ -23,48 +23,21 @@ export default function User(sequelize: Sequelize) {
                     },
                 },
             },
-            firstName: {
-                allowNull: false,
-                type: DataTypes.STRING,
-            },
-            lastName: {
-                allowNull: false,
-                type: DataTypes.STRING,
-            },
-            email: {
+            name: {
                 allowNull: false,
                 unique: true,
                 type: DataTypes.STRING,
             },
-            phoneNumber: {
+            amount: {
                 allowNull: false,
-                unique: true,
-                type: DataTypes.STRING,
+                type: DataTypes.FLOAT,
             },
-            password: {
-                allowNull: false,
-                type: DataTypes.STRING,
-            },
-            otp: {
+            interval: {
                 allowNull: false,
                 type: DataTypes.STRING,
             },
-            subscriptionId: {
+            description: {
                 type: DataTypes.STRING,
-            },
-            hasMFA: {
-                allowNull: false,
-                defaultValue: false,
-                type: DataTypes.BOOLEAN,
-            },
-            isAdmin: {
-                allowNull: false,
-                defaultValue: false,
-                type: DataTypes.BOOLEAN,
-            },
-            meta: {
-                allowNull: true,
-                type: DataTypes.JSON,
             },
             createdAt: {
                 allowNull: false,
@@ -82,11 +55,11 @@ export default function User(sequelize: Sequelize) {
             paranoid: true,
             updatedAt: true,
             deletedAt: true,
-            indexes: [{ fields: ["id", "phoneNumber", "email"] }],
+            indexes: [{ fields: ["id", "name"] }],
         }
     )
 
     //@ts-ignore
-    User.paginate = makePaginate(User)
-    return User
+    Plan.paginate = makePaginate(Plan)
+    return Plan
 }

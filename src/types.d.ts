@@ -11,6 +11,21 @@ interface DefaultAttributes {
     updatedAt?: string
 }
 
+interface ICard extends DefaultAttributes {
+    bin: string
+    name: string
+    type: string
+    bank: string
+    userId: string
+    lastFour: string
+    reusable: boolean
+    isActive: boolean
+    signature: string
+    expiryDate: string
+    countryCode: string
+    authorizationCode: string
+}
+
 interface IUser extends DefaultAttributes {
     otp: string
     email: string
@@ -18,6 +33,7 @@ interface IUser extends DefaultAttributes {
     password?: string
     firstName: string
     phoneNumber: string
+    subscriptionId: string;
     hasMFA: boolean
     isAdmin: boolean
     meta: Record<string, string>
@@ -143,6 +159,72 @@ type ITradeCopierFilters = {
     symbol: string
     status: 1 | 0 // 1=On, 0=Off
     type: 0 | 1 //0= Whitelist, 1=Blacklist
+}
+
+interface IPlan extends DefaultAttributes {
+    name: string;
+    amount: number;
+    interval: "yearly" | "monthly"
+    description: string
+}
+
+interface ISubscription extends DefaultAttributes {
+    plan: string
+    isActive: boolean;
+    reasonForCancellation?: string;
+    paidAt: Date;
+    expiresAt: Date;
+}
+
+interface Payment extends DefaultAttributes {}
+
+type PaystackResponseData = {
+    id: number
+    domain: string
+    status: string
+    amount: number
+    message: string
+    paid_at: string
+    channel: string
+    currency: string
+    metadata: string
+    reference: string
+    created_at: string
+    ip_address: string
+    gateway_response: string
+    log: {
+        input: string[]
+        errors: number
+        mobile: boolean
+        success: boolean
+        attempts: number
+        start_time: number
+        time_spent: number
+        history: LogHistory[]
+    }
+    fees: number
+    fees_split: {
+        paystack: number
+        subaccount: number
+        integration: number
+        params: FeesSplitParams
+    }
+    plan: object
+    order_id: any
+    paidAt: string
+    createdAt: string
+    customer: Customer
+    plan_object: object
+    subaccount: Subaccount
+    requested_amount: number
+    transaction_date: string
+    authorization: Authorization
+}
+
+type PaystackResponse = {
+    status: boolean
+    message: string
+    data: PaystackResponseData
 }
 
 interface PaginateResponse<T> {
