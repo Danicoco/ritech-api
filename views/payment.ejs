@@ -13,7 +13,7 @@
 
         function payWithPaystack() {
             var handler = PaystackPop.setup({
-                currency: "NGN",
+                currency: `<%=currency%>`,
                 key: `<%=key%>`,
                 email: `<%=email%>`,
                 ref: `<%=reference%>`,

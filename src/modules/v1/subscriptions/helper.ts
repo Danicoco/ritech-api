@@ -1,9 +1,9 @@
+/** @format */
+
 import { ICard, IPlan, IUser } from "../../../types"
 import CardService from "../cards/service"
 import SubscriptionService from "./service"
 import { addMonths, addYears } from "date-fns"
-import agenda from "../../common/queue/agenda"
-import { Queue_Identifier } from "../../common/queue/identifiers"
 
 export const composeCardPayment = async (
     user: IUser,
@@ -13,21 +13,21 @@ export const composeCardPayment = async (
 ) => {
     const { firstName, lastName, id } = user
 
-    // create card
-    // create subscription
-    // assign subscriptionId to user model
-
     const data = [
-        new SubscriptionService({
+        new SubscriptionService({}).create({
             isActive: true,
             paidAt: new Date(),
-            expiresAt: plan.interval === "monthly" ? addMonths(new Date(), 1) : addYears(new Date(), 1),
-            plan: plan.id,
+            expiresAt:
+                plan.interval === "monthly"
+                    ? addMonths(new Date(), 1)
+                    : addYears(new Date(), 1),
+            plan: String(plan.id),
+            reference: paystack.reference,
+            userId: String(user.id)
         }),
-        agenda.schedule(`${plan.interval === "monthly" ? "in one month" : "in one year"}`, Queue_Identifier.RENEW_SUBSCRIPTION, { userId: user.id })
-    ] as any;
+    ] as any
 
-    if (!card) { 
+    if (!card) {
         data.push(
             new CardService({}).create({
                 isActive: true,
@@ -42,7 +42,7 @@ export const composeCardPayment = async (
                 countryCode: paystack.authorization.country_code,
                 authorizationCode: paystack.authorization.authorization_code,
                 expiryDate: `${paystack.authorization.exp_month}/${paystack.authorization.exp_year}`,
-            }),
+            })
         )
     }
 

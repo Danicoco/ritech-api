@@ -11,7 +11,7 @@ export const create = async (
     next: NextFunction
 ) => {
     try {
-        if (req.user.isAdmin)
+        if (!req.user.isAdmin)
             throw catchError("You're not authorized to use this endpoint", 400)
 
         let [plan, error] = await tryPromise(
@@ -56,7 +56,7 @@ export const update = async (
     next: NextFunction
 ) => {
     try {
-        if (req.user.isAdmin)
+        if (!req.user.isAdmin)
             throw catchError("You're not authorized to use this endpoint", 400)
 
         let [plan, error] = await tryPromise(
@@ -79,7 +79,7 @@ export const remove = async (
 ) => {
     
     try {
-        if (req.user.isAdmin)
+        if (!req.user.isAdmin)
             throw catchError("You're not authorized to use this endpoint", 400)
 
         const [subscription, subError] = await tryPromise(

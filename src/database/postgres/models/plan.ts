@@ -39,6 +39,9 @@ export default function Plan(sequelize: Sequelize) {
             description: {
                 type: DataTypes.STRING,
             },
+            currency: {
+                type: DataTypes.STRING,
+            },
             createdAt: {
                 allowNull: false,
                 type: DataTypes.DATE,

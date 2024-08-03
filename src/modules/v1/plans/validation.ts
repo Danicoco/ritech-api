@@ -13,6 +13,11 @@ export const createSchema = [
         .withMessage("Enter description")
         .notEmpty()
         .withMessage("Enter descripton"),
+    body("currency")
+        .isString()
+        .withMessage("Enter currency")
+        .notEmpty()
+        .withMessage("Enter currency"),
     body("interval")
         .isIn(["yearly", "monthly"])
         .withMessage("Interval must be either yearly or monthly")

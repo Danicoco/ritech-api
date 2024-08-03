@@ -14,6 +14,6 @@ router.use("/users", userRouter);
 router.use("/copier", copierRouter)
 router.use("/cards", Authenticate, cardRouter);
 router.use("/plans", Authenticate, planRouter);
-router.use("/subscriptions", Authenticate, subscriptionRouter);
+router.use("/subscriptions", subscriptionRouter);
 
 export default router;

@@ -8,17 +8,21 @@ import Paystack from "../../thirdpartyApi/paystack"
 import CardService from "../cards/service"
 import { composeCardPayment } from "./helper"
 import SubscriptionService from "./service"
+import UserService from "../users/service"
+import agenda from "../../common/queue/agenda"
+import { Queue_Identifier } from "../../common/queue/identifiers"
 
 export const subscribe = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    const { planId } = req.query
-    const { isAdmin, firstName, lastName } = req.user
+    const { planId, userId } = req.query
     try {
-        if (isAdmin) throw catchError("Admin account cannot subscribe", 400)
-
+        const user = await new UserService({ id: String(userId) }).findOne();
+        if (!user) {
+            throw catchError('Unrecognized user')
+        }
         const plan = await new PlanService({ id: String(planId) }).findOne()
 
         if (!plan)
@@ -27,14 +31,15 @@ export const subscribe = async (
         const reference = createReference("PLAN")
 
         return res.render("payment.ejs", {
-            email: req.user.email,
+            email: user.email,
             reference,
-            customerId: req.user.id,
+            customerId: user.id,
             amount: plan.amount * 100,
+            currency: "NGN" || plan.currency,
             paymentType: "fund-account",
-            phone: req.user.phoneNumber || "",
+            phone: user.phoneNumber || "",
             base_url: configs.BACKEND_URL,
-            fullName: `${firstName} ${lastName}`,
+            fullName: `${user.firstName} ${user.lastName}`,
             key:
                 configs.PAYSTACK_ENV === "production"
                     ? configs.PAYSTACK_PROD_PUBLIC_KEY
@@ -52,6 +57,10 @@ export const create = async (
 ) => {
     const { reference, planId } = req.body
     try {
+        const subscription = await new SubscriptionService({ plan: planId, reference, userId: req.user.id }).findOne();
+
+        if (subscription) throw catchError("Subscription already processed", 400);
+
         const paystack = await new Paystack(reference).verifyTransaction()
 
         if (!paystack)
@@ -76,6 +85,7 @@ export const create = async (
             paystack
         )
         const paymentDone = await Promise.all(dataToProcess)
+        await agenda.schedule(`${plan.interval === "monthly" ? "in one month" : "in one year"}`, Queue_Identifier.RENEW_SUBSCRIPTION, { userId: req.user.id })
 
         return res
             .status(200)
@@ -92,7 +102,7 @@ export const fetch = async (
 ) => {
     const { limit = 10, next: nextPage, prev } = req.query
     try {
-        const subscriptions = await new SubscriptionService({}).findAll({
+        const subscriptions = await new SubscriptionService({ userId: req.user.id }).findAll({
 
         }, Number(limit), String(nextPage), String(prev))
 

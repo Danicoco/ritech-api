@@ -20,7 +20,19 @@ const apiLimiter = rateLimit({
 })
 
 // Middlewares
-app.use(helmet())
+app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        imgSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        frameSrc: ["'self'"],
+      },
+      reportOnly: true, // Set
+    },
+}))
 app.use(compression())
 
 app.use(cors({}))
@@ -29,8 +41,10 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 app.use(express.json({ limit: "10mb" }))
 app.disable("x-powered-by");
 
+
 app.use("/", apiLimiter, routes)
 
+app.set("view engine", "ejs")
 // Error handlers
 app.use(errorHandler)
 

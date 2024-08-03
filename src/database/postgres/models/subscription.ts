@@ -41,6 +41,12 @@ export default function Subscription(sequelize: Sequelize) {
             expiresAt: {
                 type: DataTypes.DATE,
             },
+            reference: {
+                type: DataTypes.STRING,
+            },
+            userId: {
+                type: DataTypes.UUID,
+            },
             createdAt: {
                 allowNull: false,
                 type: DataTypes.DATE,

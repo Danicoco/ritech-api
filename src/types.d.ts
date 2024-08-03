@@ -166,6 +166,7 @@ interface IPlan extends DefaultAttributes {
     amount: number;
     interval: "yearly" | "monthly"
     description: string
+    currency: string;
 }
 
 interface ISubscription extends DefaultAttributes {
@@ -174,6 +175,8 @@ interface ISubscription extends DefaultAttributes {
     reasonForCancellation?: string;
     paidAt: Date;
     expiresAt: Date;
+    reference: string;
+    userId: string;
 }
 
 interface Payment extends DefaultAttributes {}
