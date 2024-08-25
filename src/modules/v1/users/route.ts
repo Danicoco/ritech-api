@@ -14,7 +14,7 @@ import { validateExistingUser } from "./middleware"
 import {
     changePassword,
     create,
-    createMasterAccount,
+    createTraderAccount,
     forgetPassword,
     get,
     login,
@@ -43,6 +43,6 @@ userRouter.post("/verify-login", validateOtpSchema, validate, verifyLogin)
 userRouter.patch("/profile", Authenticate, updateProfileSchema, validate, update)
 userRouter.delete("/", Authenticate, remove)
 userRouter.get("/profile", Authenticate, get)
-userRouter.post("/copier-account", Authenticate, createCopierSchema, validate, createMasterAccount)
+userRouter.post("/copier-account", Authenticate, createCopierSchema, validate, createTraderAccount)
 
 export default userRouter

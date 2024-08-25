@@ -331,7 +331,7 @@ export const get = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
-export const createMasterAccount = async (
+export const createTraderAccount = async (
     req: Request,
     res: Response,
     next: NextFunction
@@ -396,5 +396,37 @@ export const createMasterAccount = async (
             .json(success("Copier account created successfully", user))
     } catch (error) {
         next(error)
+    }
+}
+
+export const deleteAccount = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { id, isAdmin, } = req.user;
+    try {
+        const [user, error] = await tryPromise(
+            new UserService({ id }).findOne()
+        )
+
+        if (error) throw catchError("Error processing your request. Try again later");
+
+        if (!user) throw catchError("Invalid Request.");
+
+        if (user.meta?.account?.account_id) {
+            await new TradeCopier().deleteAccount(user.meta.account.account_id);
+        }
+
+        let [_, deleteError] = await tryPromise(
+            new UserService({ id: req.user.id }).delete()
+        )
+        if (deleteError) throw catchError("Error processing your request", 400)
+
+        return res.status(200).json(
+            success(`${isAdmin ? "Admin" : 'User'} delete successful`, {})
+        )
+    } catch (error) {
+        next(error);
     }
 }

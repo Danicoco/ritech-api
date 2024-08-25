@@ -3,6 +3,7 @@
 import { NextFunction, Request, Response } from "express"
 import { catchError, success, tryPromise } from "../../common/utils"
 import TradeCopier from "../../thirdpartyApi/trade-copier"
+import UserService from "../users/service"
 
 export const getSettings = async (
     req: Request,
@@ -253,6 +254,44 @@ export const getFees = async (
         return res.status(200).json(
             success('Wallet retrieved successfuly', deposits)
         )
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const updateTradierAccount = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { type } = req.body;
+    try {
+        if (type === "master" && !req.user.isAdmin) {
+            throw catchError('Invalid Operation')
+        }
+
+        const [account, accountError] = await tryPromise(
+            new TradeCopier().updateAccount({ ...req.body }),
+        )
+
+        if (accountError) {
+            throw catchError("Error creating your slave account")
+        }
+
+        if (account.error) {
+            throw catchError(account.error)
+        }
+
+        let [user, error] = await tryPromise(
+            new UserService({ id: req.user.id }).update({ meta: account })
+        )
+        if (error) throw catchError("Error processing your request", 400)
+
+        delete user?.password
+
+        return res
+            .status(200)
+            .json(success("Copier account created successfully", user))
     } catch (error) {
         next(error);
     }

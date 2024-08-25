@@ -36,7 +36,7 @@ interface IUser extends DefaultAttributes {
     subscriptionId: string;
     hasMFA: boolean
     isAdmin: boolean
-    meta: Record<string, string>
+    meta: Record<string, any>
 }
 
 type ITradeCopierAccount = {

@@ -3,7 +3,7 @@ import { Queue_Identifier } from "../queue/identifiers"
 import UserService from "../../v1/users/service";
 import SubscriptionService from "../../v1/subscriptions/service";
 import { differenceInDays } from "date-fns";
-import { createReference } from "../utils";
+import { catchError, createReference } from "../utils";
 import Paystack from "../../thirdpartyApi/paystack";
 import CardService from "../../v1/cards/service";
 import PlanService from "../../v1/plans/service";
@@ -34,6 +34,45 @@ export const renewSubscription = async (agenda: Agenda) => {
                     await Promise.all(dataToProcess)
                 }
             }
+            done()
+        }
+    )
+}
+
+export const subscribeAfterPayment = async (agenda: Agenda) => {
+    agenda.define(
+        Queue_Identifier.INITIATE_SUBSCRIPTION,
+        async (job, done) => {
+            const { reference, planId, user } = job.attrs.data;
+            const subscription = await new SubscriptionService({ plan: planId, reference, userId: user.id }).findOne();
+
+        if (subscription) throw catchError("Subscription already processed", 400);
+
+        const paystack = await new Paystack(reference).verifyTransaction()
+
+        if (!paystack)
+            throw catchError(
+                "We're unable to process your payment. Please contact support if issue persist!"
+            )
+
+        const [card, plan] = await Promise.all([
+            new CardService({
+                lastFour: paystack.authorization.last4,
+                userId: user.id,
+            }).findOne(),
+            new PlanService({ id: planId }).findOne(),
+        ])
+
+        if (!plan) throw catchError("Invalid Plan selected", 400)
+
+        const dataToProcess = await composeCardPayment(
+            user,
+            plan,
+            card,
+            paystack
+        )
+        await Promise.all(dataToProcess)
+        await agenda.schedule(`${plan.interval === "monthly" ? "in one month" : "in one year"}`, Queue_Identifier.RENEW_SUBSCRIPTION, { userId:user.id })
             done()
         }
     )

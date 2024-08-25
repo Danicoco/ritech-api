@@ -30,6 +30,10 @@ export const subscribe = async (
 
         const reference = createReference("PLAN")
 
+        await agenda.schedule("in 1 minute", Queue_Identifier.INITIATE_SUBSCRIPTION, { reference, planId, user })
+        await agenda.schedule("in 2 minutes", Queue_Identifier.INITIATE_SUBSCRIPTION, { reference, planId, user })
+        await agenda.schedule("in 5 minutes", Queue_Identifier.INITIATE_SUBSCRIPTION, { reference, planId, user })
+
         return res.render("payment.ejs", {
             email: user.email,
             reference,

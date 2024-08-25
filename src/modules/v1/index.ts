@@ -11,7 +11,7 @@ const router = Router();
 
 
 router.use("/users", userRouter);
-router.use("/copier", copierRouter)
+router.use("/copier", Authenticate, copierRouter)
 router.use("/cards", Authenticate, cardRouter);
 router.use("/plans", Authenticate, planRouter);
 router.use("/subscriptions", subscriptionRouter);
