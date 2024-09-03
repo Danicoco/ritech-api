@@ -1,8 +1,8 @@
 /** @format */
 
 import { Router } from "express"
-import { addFilters, addTemplate, fetchPosition, getFees, getMasterOrder, getReports, getSettings, getSlaveOrder, getTemplate, getWalletDeposits, updateTemplate, updateTradierAccount } from "./controller"
-import { addFiltersSchema, createTemplateSchema, feesSchema, filterSchema, getTemplateSchema, positionSchema, updateTemplateSchema } from "./validation";
+import { addFilters, addTemplate, deleteCopier, fetchPosition, getFees, getMasterOrder, getReports, getSettings, getSlaveOrder, getTemplate, getWalletDeposits, updateTemplate, updateTradierAccount } from "./controller"
+import { addFiltersSchema, createTemplateSchema, deleteCopierSchema, feesSchema, filterSchema, getTemplateSchema, positionSchema, updateTemplateSchema } from "./validation";
 import { validate } from "../../common/utils";
 import { createCopierSchema } from "../users/validation";
 
@@ -20,6 +20,7 @@ copierRouter.get("/fees", feesSchema, validate, getFees);
 copierRouter.get("/master-orders", filterSchema, validate, getMasterOrder);
 copierRouter.get("/slave-orders", filterSchema, validate, getSlaveOrder);
 copierRouter.patch("/account",  createCopierSchema, validate, updateTradierAccount);
+copierRouter.delete("/account",  deleteCopierSchema, validate, deleteCopier);
 
 
 export default copierRouter

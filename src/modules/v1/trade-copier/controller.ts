@@ -296,3 +296,20 @@ export const updateTradierAccount = async (
         next(error);
     }
 }
+
+export const deleteCopier = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { accountId, } = req.query;
+    try {
+        await new TradeCopier().deleteAccount(accountId as string);
+
+        return res.status(200).json(
+            success(`Copier account delete successfully`, {})
+        )
+    } catch (error) {
+        next(error);
+    }
+}

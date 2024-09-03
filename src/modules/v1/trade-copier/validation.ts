@@ -36,3 +36,7 @@ export const feesSchema = [
     query('date_fees').isString().withMessage('Enter a date_fees').notEmpty().withMessage('Enter date_fees'),
     query('amount').isString().withMessage('Enter an amount').notEmpty().withMessage('Enter amount'),
 ]
+
+export const deleteCopierSchema = [
+    query("accountId").isString().withMessage("Account ID is required").notEmpty().withMessage("Account ID is required"),
+]
