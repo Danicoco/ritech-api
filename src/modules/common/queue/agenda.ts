@@ -2,7 +2,7 @@
 
 import { Agenda } from "@hokify/agenda"
 import { configs } from "../utils/config"
-import { renewSubscription } from "../jobs/subscription"
+import { renewSubscription, subscribeAfterPayment } from "../jobs/subscription"
 
 const agenda = new Agenda({
     name: "Ritech",
@@ -14,7 +14,7 @@ agenda
     .on("ready", () => console.log("Agenda started!"))
     .on("error", err => console.log("Agenda connection error!", err?.message))
 
-const definitions = [renewSubscription]
+const definitions = [renewSubscription, subscribeAfterPayment]
 
 definitions.forEach(definition => definition(agenda));
 
