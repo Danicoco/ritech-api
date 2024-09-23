@@ -57,6 +57,11 @@ export default function User(sequelize: Sequelize) {
                 defaultValue: false,
                 type: DataTypes.BOOLEAN,
             },
+            verified: {
+                allowNull: false,
+                defaultValue: false,
+                type: DataTypes.BOOLEAN,
+            },
             isAdmin: {
                 allowNull: false,
                 defaultValue: false,

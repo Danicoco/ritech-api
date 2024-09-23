@@ -33,7 +33,8 @@ interface IUser extends DefaultAttributes {
     password?: string
     firstName: string
     phoneNumber: string
-    subscriptionId: string;
+    subscriptionId: string
+    verified: boolean
     hasMFA: boolean
     isAdmin: boolean
     meta: Record<string, any>
@@ -162,21 +163,21 @@ type ITradeCopierFilters = {
 }
 
 interface IPlan extends DefaultAttributes {
-    name: string;
-    amount: number;
+    name: string
+    amount: number
     interval: "yearly" | "monthly"
     description: string
-    currency: string;
+    currency: string
 }
 
 interface ISubscription extends DefaultAttributes {
     plan: string
-    isActive: boolean;
-    reasonForCancellation?: string;
-    paidAt: Date;
-    expiresAt: Date;
-    reference: string;
-    userId: string;
+    isActive: boolean
+    reasonForCancellation?: string
+    paidAt: Date
+    expiresAt: Date
+    reference: string
+    userId: string
 }
 
 interface Payment extends DefaultAttributes {}
@@ -253,6 +254,7 @@ interface IPaginator<T> {
     populate?: string
 }
 
+type IMail = { name: string; email: string; subject: string; message: string }
 
 type CreateErr = (message: string, code?: number, validations?: object) => Error
 

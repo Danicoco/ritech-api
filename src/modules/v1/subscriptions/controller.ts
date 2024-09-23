@@ -1,7 +1,7 @@
 /** @format */
 
 import { NextFunction, Request, Response } from "express"
-import { catchError, createReference, success } from "../../common/utils"
+import { catchError, createReference, success, tryPromise } from "../../common/utils"
 import PlanService from "../plans/service"
 import { configs } from "../../common/utils/config"
 import Paystack from "../../thirdpartyApi/paystack"
@@ -19,20 +19,45 @@ export const subscribe = async (
 ) => {
     const { planId, userId } = req.query
     try {
-        const user = await new UserService({ id: String(userId) }).findOne();
+        const user = await new UserService({ id: String(userId) }).findOne()
         if (!user) {
-            throw catchError('Unrecognized user')
+            throw catchError("Unrecognized user")
         }
+
+        if (!user.verified)
+            throw catchError(
+                "You've to verify your account before subscribing",
+                400
+            )
         const plan = await new PlanService({ id: String(planId) }).findOne()
 
         if (!plan)
             throw catchError("Invalid plan selected. Try again later", 400)
 
+        if (user.subscriptionId) {
+            const sub = await new SubscriptionService({
+                id: String(user.subscriptionId),
+            }).findOne()
+            if (sub?.isActive) throw catchError("You've a active subscription.")
+        }
+
         const reference = createReference("PLAN")
 
-        await agenda.schedule("in 1 minute", Queue_Identifier.INITIATE_SUBSCRIPTION, { reference, planId, user })
-        await agenda.schedule("in 2 minutes", Queue_Identifier.INITIATE_SUBSCRIPTION, { reference, planId, user })
-        await agenda.schedule("in 5 minutes", Queue_Identifier.INITIATE_SUBSCRIPTION, { reference, planId, user })
+        await agenda.schedule(
+            "in 1 minute",
+            Queue_Identifier.INITIATE_SUBSCRIPTION,
+            { reference, planId, user }
+        )
+        await agenda.schedule(
+            "in 2 minutes",
+            Queue_Identifier.INITIATE_SUBSCRIPTION,
+            { reference, planId, user }
+        )
+        await agenda.schedule(
+            "in 5 minutes",
+            Queue_Identifier.INITIATE_SUBSCRIPTION,
+            { reference, planId, user }
+        )
 
         return res.render("payment.ejs", {
             email: user.email,
@@ -61,9 +86,14 @@ export const create = async (
 ) => {
     const { reference, planId } = req.body
     try {
-        const subscription = await new SubscriptionService({ plan: planId, reference, userId: req.user.id }).findOne();
+        const subscription = await new SubscriptionService({
+            plan: planId,
+            reference,
+            userId: req.user.id,
+        }).findOne()
 
-        if (subscription) throw catchError("Subscription already processed", 400);
+        if (subscription)
+            throw catchError("Subscription already processed", 400)
 
         const paystack = await new Paystack(reference).verifyTransaction()
 
@@ -89,7 +119,11 @@ export const create = async (
             paystack
         )
         const paymentDone = await Promise.all(dataToProcess)
-        await agenda.schedule(`${plan.interval === "monthly" ? "in one month" : "in one year"}`, Queue_Identifier.RENEW_SUBSCRIPTION, { userId: req.user.id })
+        await agenda.schedule(
+            `${plan.interval === "monthly" ? "in one month" : "in one year"}`,
+            Queue_Identifier.RENEW_SUBSCRIPTION,
+            { userId: req.user.id }
+        )
 
         return res
             .status(200)
@@ -106,13 +140,62 @@ export const fetch = async (
 ) => {
     const { limit = 10, next: nextPage, prev } = req.query
     try {
-        const subscriptions = await new SubscriptionService({ userId: req.user.id }).findAll({
+        let subscriptions = await new SubscriptionService({
+            userId: req.user.id,
+        }).findAll({}, Number(limit), String(nextPage), String(prev))
 
-        }, Number(limit), String(nextPage), String(prev))
+        const ids = subscriptions.edges.map(edge => String(edge.id));
+
+        if (ids.length) {
+            const [plans] = await tryPromise(
+                new PlanService({}).findByIds(ids)
+            )
+
+            if (plans?.length) {
+                const data = subscriptions.edges.map(edge => {
+                    const plan = plans.find(item => String(item.id) === String(edge.plan))
+                    // @ts-ignore
+                    if (plan) edge.plan = plan;
+
+                    return edge;
+                })
+                subscriptions.edges = data;
+            }
+        }
 
         return res
             .status(200)
-            .json(success("Card payment successfully", subscriptions))
+            .json(success("Subscriptions retrieved successfully", subscriptions))
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const get = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        let [subscription, error] = await tryPromise(
+            new SubscriptionService({
+                userId: req.user.id,
+                isActive: true,
+            }).findOne()
+        );
+
+        if (error) throw catchError("Error retrieving subscription");
+    
+        if (subscription) {
+            const [plan, error] = await tryPromise(
+                new PlanService({ id: subscription.plan }).findOne()
+            );
+
+            if (error) throw catchError("Error processing request");
+
+            // @ts-ignore
+            subscription.plan = plan
+        }
+
+        return res
+            .status(200)
+            .json(success("Subscription successfully retrieved", subscription))
     } catch (error) {
         next(error)
     }

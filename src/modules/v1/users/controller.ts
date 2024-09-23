@@ -13,6 +13,7 @@ import db from "../../../database/postgres/models"
 import { Transaction } from "sequelize"
 import TradeCopier from "../../thirdpartyApi/trade-copier"
 import { configs } from "../../common/utils/config"
+import sendMail from "../../common/utils/email"
 
 export const create = async (
     req: Request,
@@ -21,6 +22,7 @@ export const create = async (
 ) => {
     try {
         const otp = randomInt(1000, 9999)
+        const { firstName, lastName, email } = req.body;
 
         const transaction = await db.sequelize.transaction({
             autocommit: false,
@@ -49,14 +51,12 @@ export const create = async (
 
         await transaction.commit()
 
-        let [userExist] = await tryPromise(
-            new UserService({ email: user?.email }).findOne()
-        )
-        delete userExist?.password
-
-        const token = await tokenize({
-            ...userExist,
-            isAdmin: userExist?.isAdmin || false,
+        // send email
+        sendMail({
+            name: `${firstName} ${lastName}`,
+            email,
+            subject: `Verify your account, ${firstName}`,
+            message: `Verify your account, use the code ${otp}`
         })
 
         return res
@@ -64,12 +64,46 @@ export const create = async (
             .json(
                 success(
                     "Account created successfully",
-                    { user: userExist, plainOtp: otp },
-                    { token }
+                    { ...user, password: undefined }
                 )
             )
     } catch (error) {
         next(error)
+    }
+}
+
+export const verifyAccount = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { email, otp } = req.body;
+    try {
+        const hashedOtp = createHash215(otp);
+
+        const [user, error] = await tryPromise(
+            new UserService({ email }).findOne()
+        )
+
+        if (error) throw catchError("Error processing request");
+
+        if (!user) throw catchError("Account does not exist", 400);
+
+        if (user.verified) throw catchError("Account already verified", 400);
+
+        if (hashedOtp !== user?.otp) {
+            throw catchError("Invalid verification code", 400);
+        }
+
+        await tryPromise(
+            new UserService({ email }).update({ otp: "", verified: true })
+        )
+
+        return res.status(200).json(
+            success("Account verified successfully", {})
+        )
+    } catch (error) {
+        next(error);
     }
 }
 
@@ -108,6 +142,8 @@ export const login = async (
                 isAdmin,
             })
         }
+
+        delete userExist.meta?.subscription
 
         return res
             .status(200)
@@ -226,6 +262,14 @@ export const resendOTP = async (
     try {
         const otp = randomInt(1000, 9999)
 
+        const [user] = await tryPromise(
+            new UserService({ email: req.body.email }).findOne()
+        )
+
+        if (!user) {
+            throw catchError("Account does not exist", 400);
+        }
+
         const [_, error] = await tryPromise(
             new UserService({ email: req.body.email }).update({
                 otp: createHash215(otp.toString()),
@@ -235,6 +279,13 @@ export const resendOTP = async (
         if (error) throw catchError("Error processing your request", 400)
 
         // send notification
+        // send email
+        sendMail({
+            name: `${user?.firstName} ${user?.lastName}`,
+            email: req.body.email,
+            subject: `Verify your account, ${user?.firstName}`,
+            message: `Verify your account, use the code ${otp}`
+        })
 
         return res.status(200).json(success("OTP send to email", {}))
     } catch (error) {
@@ -322,6 +373,7 @@ export const get = async (req: Request, res: Response, next: NextFunction) => {
         if (error) throw catchError("Error processing your request", 400)
 
         delete user?.password
+        delete user?.meta?.subscription
 
         return res
             .status(200)
@@ -353,6 +405,10 @@ export const createTraderAccount = async (
     try {
         if (type === "master" && !req.user.isAdmin) {
             throw catchError('Invalid Operation')
+        }
+
+        if (!req.user.isAdmin && !req.user.verified)  {
+            throw catchError("You must verify your account before performing this action")
         }
         const [account, accountError] = await tryPromise(
             new TradeCopier().createAccount(

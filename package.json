@@ -83,7 +83,8 @@
     "sequelize-replace-enum-postgres": "^1.6.0",
     "swagger-ui-express": "^4.1.6",
     "winston": "^3.8.2",
-    "winston-daily-rotate-file": "^4.7.1"
+    "winston-daily-rotate-file": "^4.7.1",
+    "zeptomail": "^6.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.21.4",
