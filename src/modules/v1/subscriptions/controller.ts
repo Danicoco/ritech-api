@@ -1,7 +1,12 @@
 /** @format */
 
 import { NextFunction, Request, Response } from "express"
-import { catchError, createReference, success, tryPromise } from "../../common/utils"
+import {
+    catchError,
+    createReference,
+    success,
+    tryPromise,
+} from "../../common/utils"
 import PlanService from "../plans/service"
 import { configs } from "../../common/utils/config"
 import Paystack from "../../thirdpartyApi/paystack"
@@ -140,32 +145,39 @@ export const fetch = async (
 ) => {
     const { limit = 10, next: nextPage, prev } = req.query
     try {
-        let subscriptions = await new SubscriptionService({
-            userId: req.user.id,
-        }).findAll({}, Number(limit), String(nextPage), String(prev))
+        let subscriptions = await new SubscriptionService({}).findAll(
+            {
+                userId: req.user.id,
+            },
+            Number(limit),
+            String(nextPage),
+            String(prev)
+        )
 
-        const ids = subscriptions.edges.map(edge => String(edge.id));
+        const ids = subscriptions.edges.map(edge => String(edge.id))
 
         if (ids.length) {
-            const [plans] = await tryPromise(
-                new PlanService({}).findByIds(ids)
-            )
+            const [plans] = await tryPromise(new PlanService({}).findByIds(ids))
 
             if (plans?.length) {
                 const data = subscriptions.edges.map(edge => {
-                    const plan = plans.find(item => String(item.id) === String(edge.plan))
+                    const plan = plans.find(
+                        item => String(item.id) === String(edge.plan)
+                    )
                     // @ts-ignore
-                    if (plan) edge.plan = plan;
+                    if (plan) edge.plan = plan
 
-                    return edge;
+                    return edge
                 })
-                subscriptions.edges = data;
+                subscriptions.edges = data
             }
         }
 
         return res
             .status(200)
-            .json(success("Subscriptions retrieved successfully", subscriptions))
+            .json(
+                success("Subscriptions retrieved successfully", subscriptions)
+            )
     } catch (error) {
         next(error)
     }
@@ -178,16 +190,16 @@ export const get = async (req: Request, res: Response, next: NextFunction) => {
                 userId: req.user.id,
                 isActive: true,
             }).findOne()
-        );
+        )
 
-        if (error) throw catchError("Error retrieving subscription");
-    
+        if (error) throw catchError("Error retrieving subscription")
+
         if (subscription) {
             const [plan, error] = await tryPromise(
                 new PlanService({ id: subscription.plan }).findOne()
-            );
+            )
 
-            if (error) throw catchError("Error processing request");
+            if (error) throw catchError("Error processing request")
 
             // @ts-ignore
             subscription.plan = plan

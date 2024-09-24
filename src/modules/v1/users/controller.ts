@@ -14,6 +14,8 @@ import { Transaction } from "sequelize"
 import TradeCopier from "../../thirdpartyApi/trade-copier"
 import { configs } from "../../common/utils/config"
 import sendMail from "../../common/utils/email"
+import VerifyAccount from "../../common/templates/verify-account"
+import ResetPassword from "../../common/templates/reset-password"
 
 export const create = async (
     req: Request,
@@ -56,7 +58,7 @@ export const create = async (
             name: `${firstName} ${lastName}`,
             email,
             subject: `Verify your account, ${firstName}`,
-            message: `Verify your account, use the code ${otp}`
+            message: VerifyAccount(firstName, `${otp}`)
         })
 
         return res
@@ -221,6 +223,12 @@ export const forgetPassword = async (
                 throw catchError("Error processing your request", 500)
 
             // send mail
+            sendMail({
+                name: `${user?.firstName} ${user?.lastName}`,
+                email: req.body.email,
+                subject: `Verify your account, ${user?.firstName}`,
+                message: ResetPassword(user?.firstName, `${otp}`)
+            })
         }
 
         return res.status(200).json(success("Mail sent", { plainOtp: otp }))
@@ -278,7 +286,6 @@ export const resendOTP = async (
 
         if (error) throw catchError("Error processing your request", 400)
 
-        // send notification
         // send email
         sendMail({
             name: `${user?.firstName} ${user?.lastName}`,
