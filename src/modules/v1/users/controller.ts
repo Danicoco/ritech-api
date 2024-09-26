@@ -97,9 +97,11 @@ export const verifyAccount = async (
             throw catchError("Invalid verification code", 400);
         }
 
-        await tryPromise(
-            new UserService({ email }).update({ otp: "", verified: true })
+        const [_,verifyError] = await tryPromise(
+            new UserService({ id: user.id }).update({ otp: "", verified: true })
         )
+
+        if (verifyError) throw catchError("Error verifying your account")
 
         return res.status(200).json(
             success("Account verified successfully", {})
