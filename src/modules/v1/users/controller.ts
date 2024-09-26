@@ -270,6 +270,7 @@ export const resendOTP = async (
     next: NextFunction
 ) => {
     try {
+        const { type = "forget-password" } = req.body;
         const otp = randomInt(1000, 9999)
 
         const [user] = await tryPromise(
@@ -288,13 +289,21 @@ export const resendOTP = async (
 
         if (error) throw catchError("Error processing your request", 400)
 
-        // send email
-        sendMail({
-            name: `${user?.firstName} ${user?.lastName}`,
-            email: req.body.email,
-            subject: `Verify your account, ${user?.firstName}`,
-            message: `Verify your account, use the code ${otp}`
-        })
+        if (type) {
+            sendMail({
+                name: `${user.firstName} ${user.lastName}`,
+                email: user.email,
+                subject: `Verify your account, ${user.firstName}`,
+                message: VerifyAccount(user.firstName, `${otp}`)
+            })
+        } else {
+            sendMail({
+                name: `${user?.firstName} ${user?.lastName}`,
+                email: req.body.email,
+                subject: `Verify your account, ${user?.firstName}`,
+                message: ResetPassword(user?.firstName, `${otp}`)
+            })
+        }
 
         return res.status(200).json(success("OTP send to email", {}))
     } catch (error) {

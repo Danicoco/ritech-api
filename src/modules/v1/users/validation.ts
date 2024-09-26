@@ -17,6 +17,7 @@ export const loginSchema = [
 
 export const forgetPasswordSchema = [
     body('email').isEmail().withMessage('Enter your email').notEmpty().withMessage('Enter email'),
+    body('type').isIn(['forget-password', 'verify-account']).default('forget-password').optional(),
 ]
 
 export const validateOtpSchema = [
