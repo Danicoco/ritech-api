@@ -154,7 +154,7 @@ export const fetch = async (
             String(prev)
         )
 
-        const ids = subscriptions.edges.map(edge => String(edge.id))
+        const ids = subscriptions.edges.map(edge => String(edge.plan))
 
         if (ids.length) {
             const [plans] = await tryPromise(new PlanService({}).findByIds(ids))
