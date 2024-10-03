@@ -1,7 +1,7 @@
 /** @format */
 
 import { Router } from "express"
-import { addFilters, addTemplate, deleteCopier, fetchPosition, getFees, getMasterOrder, getReports, getSettings, getSlaveOrder, getTemplate, getWalletDeposits, updateTemplate, updateTradierAccount } from "./controller"
+import { addFilters, addTemplate, deleteCopier, fetchPosition, getFees, getMasterOrder, getReports, getSettings, getSlaveOrder, getTemplate, getWalletDeposits, setSettings, updateTemplate, updateTradierAccount } from "./controller"
 import { addFiltersSchema, createTemplateSchema, deleteCopierSchema, feesSchema, filterSchema, getTemplateSchema, positionSchema, updateTemplateSchema } from "./validation";
 import { validate } from "../../common/utils";
 import { createCopierSchema } from "../users/validation";
@@ -9,6 +9,7 @@ import { createCopierSchema } from "../users/validation";
 const copierRouter = Router({ caseSensitive: true, strict: true })
 
 copierRouter.get("/get-settings", getSettings);
+copierRouter.post("/set-settings", setSettings);
 copierRouter.get("/positions", positionSchema, validate, fetchPosition);
 copierRouter.post("/template", createTemplateSchema, validate, addTemplate);
 copierRouter.patch("/template", updateTemplateSchema, validate, updateTemplate);

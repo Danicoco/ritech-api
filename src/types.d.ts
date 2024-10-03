@@ -178,6 +178,7 @@ interface ISubscription extends DefaultAttributes {
     expiresAt: Date
     reference: string
     userId: string
+    ritechPlanId?: string
 }
 
 interface Payment extends DefaultAttributes {}

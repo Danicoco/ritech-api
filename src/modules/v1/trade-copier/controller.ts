@@ -26,6 +26,26 @@ export const getSettings = async (
     }
 }
 
+export const setSettings = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const [settings, error] = await tryPromise(
+            new TradeCopier().setSettings(req.body)
+        )
+
+        if (error) throw catchError("Error updating settings")
+
+        return res
+            .status(200)
+            .json(success("Settings successfully updated", settings))
+    } catch (error) {
+        next(error)
+    }
+}
+
 export const fetchPosition = async (
     req: Request,
     res: Response,

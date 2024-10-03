@@ -10,12 +10,17 @@ import {
 } from "../../common/hashings"
 import { randomInt } from "node:crypto"
 import db from "../../../database/postgres/models"
-import { Transaction } from "sequelize"
+import { Op, Transaction } from "sequelize"
 import TradeCopier from "../../thirdpartyApi/trade-copier"
 import { configs } from "../../common/utils/config"
 import sendMail from "../../common/utils/email"
 import VerifyAccount from "../../common/templates/verify-account"
 import ResetPassword from "../../common/templates/reset-password"
+import SubscriptionService from "../subscriptions/service"
+import PlanService from "../plans/service"
+import { endOfMonth, startOfMonth, subMonths } from "date-fns"
+import { ISubscription, IUser } from "../../../types"
+import { groupByCreatedAt } from "./helper"
 
 export const create = async (
     req: Request,
@@ -504,3 +509,69 @@ export const deleteAccount = async (
         next(error);
     }
 }
+
+export const getDashboardData = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const [totalAdmin, totalUser, subscribedUser, unSubscribedUser, recentSubs, plans] = await Promise.all([
+            new UserService({ isAdmin: true }).countDocuments(),
+            new UserService({ isAdmin: false }).countDocuments(),
+            new SubscriptionService({}).getSubscriptions(true, startOfMonth(new Date()).toISOString(), endOfMonth(new Date()).toISOString()),
+            new SubscriptionService({}).getSubscriptions(true, startOfMonth(subMonths(new Date(), 1)).toISOString(), endOfMonth(subMonths(new Date(), 1)).toISOString()),
+            new SubscriptionService({}).findAll({}, 2),
+            new PlanService({}).findAll({}, 20)
+        ])
+    
+        const subscribers = subscribedUser.map(subs => {
+            const plan = plans.edges.find(item => String(item.id) === String(subs.plan))
+            return { ...subs, plan }
+        })
+    
+        const unsubscribers = unSubscribedUser.map(subs => {
+            const plan = plans.edges.find(item => String(item.id) === String(subs.plan))
+            return { ...subs, plan }
+        }).filter(item => {
+            const subscription = subscribers.find(sub => String(sub.userId) === String(item.userId))
+    
+            if (!subscription) return item
+        }).filter(item => item)
+    
+        const userIds = recentSubs.edges.map(edge => String(edge.userId))
+    
+        const users = await new UserService({}).findAll({
+            // @ts-ignore
+            id: { [Op.in]: userIds }
+        }) as {edges: IUser[]};
+    
+        const recentSubscriptions = recentSubs.edges.map((edge) => {
+            const user = users.edges.find((item: IUser) => String(item.id) === String(edge.userId));
+            const plan = plans.edges.find(item => String(item.id) === String(edge.plan))
+    
+            return { ...edge, plan, userId: { firstName: user?.firstName, lastName: user?.lastName } }
+        })
+    
+        const actualBalance = subscribers.reduce((acc, curr) => acc + Number(curr.plan?.amount || 0), 0)
+        const pendingBalance = unsubscribers.reduce((acc, curr) => acc + Number(curr.plan?.amount || 0), 0)
+    
+        let currentMonthSubscription = groupByCreatedAt<ISubscription>(subscribedUser)
+        currentMonthSubscription = Object.keys(currentMonthSubscription).map(item => ({ [item]: currentMonthSubscription[item].length }))
+
+        return res.status(200).json(
+            success("Dashboard records", {
+                totalAdmin,
+                totalUser,
+                subscribedUser,
+                unSubscribedUser,
+                currentMonthSubscription,
+                pendingBalance,
+                actualBalance,
+                recentSubscriptions
+            })
+        )
+    } catch (error) {
+        next(error);
+    }
+};

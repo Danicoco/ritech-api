@@ -4,6 +4,7 @@ import { Model, DataTypes, Sequelize } from "sequelize"
 import { makePaginate } from "sequelize-cursor-pagination"
 
 import { ISubscription } from "../../../types"
+import Plan from "./plan"
 
 interface SubscriptionInstance extends Model<ISubscription>, ISubscription {}
 
@@ -26,6 +27,10 @@ export default function Subscription(sequelize: Sequelize) {
             plan: {
                 allowNull: false,
                 type: DataTypes.STRING,
+                references: {
+                    model: Plan(sequelize),
+                    key: 'id',
+                }
             },
             isActive: {
                 allowNull: false,
@@ -45,6 +50,9 @@ export default function Subscription(sequelize: Sequelize) {
                 type: DataTypes.STRING,
             },
             userId: {
+                type: DataTypes.UUID,
+            },
+            ritechPlanId: {
                 type: DataTypes.UUID,
             },
             createdAt: {
