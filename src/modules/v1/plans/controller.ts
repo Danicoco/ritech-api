@@ -4,6 +4,7 @@ import { NextFunction, Request, Response } from "express"
 import { catchError, success, tryPromise } from "../../common/utils"
 import PlanService from "./service"
 import SubscriptionService from "../subscriptions/service"
+import { Op } from "sequelize"
 
 export const create = async (
     req: Request,
@@ -30,16 +31,22 @@ export const fetch = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { limit = 10, next: nextPage, prev } = req.query
+    const { limit = 10, next: nextPage, prev, search } = req.query
     try {
-        let [plan, error] = await tryPromise(
+        let [plan, error] = (await tryPromise(
             new PlanService({}).findAll(
-                {},
+                {
+                    ...((search && {
+                        name: {
+                            [Op.iLike]: `%${search}%`,
+                        },
+                    })),
+                },
                 Number(limit),
                 String(nextPage),
                 String(prev)
             )
-        )
+        )) as any
         if (error) throw catchError("Error processing your request", 400)
 
         return res
@@ -77,18 +84,21 @@ export const remove = async (
     res: Response,
     next: NextFunction
 ) => {
-    
     try {
         if (!req.user.isAdmin)
             throw catchError("You're not authorized to use this endpoint", 400)
 
         const [subscription, subError] = await tryPromise(
-            new SubscriptionService({ plan: req.params.id, isActive: true }).findOne()
+            new SubscriptionService({
+                plan: req.params.id,
+                isActive: true,
+            }).findOne()
         )
 
         if (subError) throw catchError("Error processing your request", 400)
 
-        if (subscription) throw catchError("Cannot delete plan currently in use")
+        if (subscription)
+            throw catchError("Cannot delete plan currently in use")
 
         const [plan, error] = await tryPromise(
             new PlanService({ id: req.params.id }).delete()

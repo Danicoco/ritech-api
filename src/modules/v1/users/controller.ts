@@ -29,7 +29,7 @@ export const create = async (
 ) => {
     try {
         const otp = randomInt(1000, 9999)
-        const { firstName, lastName, email } = req.body;
+        const { firstName, lastName, email } = req.body
 
         const transaction = await db.sequelize.transaction({
             autocommit: false,
@@ -58,22 +58,22 @@ export const create = async (
 
         await transaction.commit()
 
-        // send email
-        sendMail({
-            name: `${firstName} ${lastName}`,
-            email,
-            subject: `Verify your account, ${firstName}`,
-            message: VerifyAccount(firstName, `${otp}`)
-        })
+        if (!req.body.isAdmin) {
+            // send email
+            sendMail({
+                name: `${firstName} ${lastName}`,
+                email,
+                subject: `Verify your account, ${firstName}`,
+                message: VerifyAccount(firstName, `${otp}`),
+            })
+        }
 
-        return res
-            .status(201)
-            .json(
-                success(
-                    "Account created successfully",
-                    { ...user, password: undefined }
-                )
-            )
+        return res.status(201).json(
+            success("Account created successfully", {
+                ...user,
+                password: undefined,
+            })
+        )
     } catch (error) {
         next(error)
     }
@@ -84,35 +84,35 @@ export const verifyAccount = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { email, otp } = req.body;
+    const { email, otp } = req.body
     try {
-        const hashedOtp = createHash215(otp);
+        const hashedOtp = createHash215(otp)
 
         const [user, error] = await tryPromise(
             new UserService({ email }).findOne()
         )
 
-        if (error) throw catchError("Error processing request");
+        if (error) throw catchError("Error processing request")
 
-        if (!user) throw catchError("Account does not exist", 400);
+        if (!user) throw catchError("Account does not exist", 400)
 
-        if (user.verified) throw catchError("Account already verified", 400);
+        if (user.verified) throw catchError("Account already verified", 400)
 
         if (hashedOtp !== user?.otp) {
-            throw catchError("Invalid verification code", 400);
+            throw catchError("Invalid verification code", 400)
         }
 
-        const [_,verifyError] = await tryPromise(
+        const [_, verifyError] = await tryPromise(
             new UserService({ id: user.id }).update({ otp: "", verified: true })
         )
 
         if (verifyError) throw catchError("Error verifying your account")
 
-        return res.status(200).json(
-            success("Account verified successfully", {})
-        )
+        return res
+            .status(200)
+            .json(success("Account verified successfully", {}))
     } catch (error) {
-        next(error);
+        next(error)
     }
 }
 
@@ -234,7 +234,7 @@ export const forgetPassword = async (
                 name: `${user?.firstName} ${user?.lastName}`,
                 email: req.body.email,
                 subject: `Verify your account, ${user?.firstName}`,
-                message: ResetPassword(user?.firstName, `${otp}`)
+                message: ResetPassword(user?.firstName, `${otp}`),
             })
         }
 
@@ -275,7 +275,7 @@ export const resendOTP = async (
     next: NextFunction
 ) => {
     try {
-        const { type = "forget-password" } = req.body;
+        const { type = "forget-password" } = req.body
         const otp = randomInt(1000, 9999)
 
         const [user] = await tryPromise(
@@ -283,7 +283,7 @@ export const resendOTP = async (
         )
 
         if (!user) {
-            throw catchError("Account does not exist", 400);
+            throw catchError("Account does not exist", 400)
         }
 
         const [_, error] = await tryPromise(
@@ -299,14 +299,14 @@ export const resendOTP = async (
                 name: `${user.firstName} ${user.lastName}`,
                 email: user.email,
                 subject: `Verify your account, ${user.firstName}`,
-                message: VerifyAccount(user.firstName, `${otp}`)
+                message: VerifyAccount(user.firstName, `${otp}`),
             })
         } else {
             sendMail({
                 name: `${user?.firstName} ${user?.lastName}`,
                 email: req.body.email,
                 subject: `Verify your account, ${user?.firstName}`,
-                message: ResetPassword(user?.firstName, `${otp}`)
+                message: ResetPassword(user?.firstName, `${otp}`),
             })
         }
 
@@ -351,9 +351,10 @@ export const update = async (
     res: Response,
     next: NextFunction
 ) => {
+    const { id } = req.params
     try {
         let [user, error] = await tryPromise(
-            new UserService({ id: req.user.id }).update(req.body)
+            new UserService({ id: id || req.user.id }).update(req.body)
         )
         if (error) throw catchError("Error processing your request", 400)
 
@@ -372,9 +373,10 @@ export const remove = async (
     res: Response,
     next: NextFunction
 ) => {
+    const { id } = req.params;
     try {
         let [user, error] = await tryPromise(
-            new UserService({ id: req.user.id }).delete()
+            new UserService({ id: id || req.user.id }).delete()
         )
         if (error) throw catchError("Error processing your request", 400)
 
@@ -400,7 +402,62 @@ export const get = async (req: Request, res: Response, next: NextFunction) => {
 
         return res
             .status(200)
-            .json(success("User record updated successfully", user))
+            .json(success("User retrieved successfully", user))
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const fetch = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { admin, limit, next: nextPage, prev, search } = req.query
+    try {
+        let [users, error] = await tryPromise(
+            new UserService({}).findAll(
+                {
+                    ...(admin
+                        ? {
+                              isAdmin: true,
+                          }
+                        : { isAdmin: false }),
+                    ...(search && {
+                        [Op.or]: [
+                            {
+                                firstName: {
+                                    [Op.iLike]: `%${search}%`,
+                                },
+                            },
+                            {
+                                lastName: {
+                                    [Op.iLike]: `%${search}%`,
+                                },
+                            },
+                            {
+                                email: {
+                                    [Op.iLike]: `%${search}%`,
+                                },
+                            },
+                            {
+                                phoneNumber: {
+                                    [Op.iLike]: `%${search}%`,
+                                },
+                            },
+                        ],
+                    }),
+                },
+                Number(limit),
+                String(nextPage),
+                String(prev)
+            )
+        )
+        if (error) throw catchError("Error processing your request", 400)
+
+        return res
+            .status(200)
+            .json(success("Users retrieved successfully", users))
     } catch (error) {
         next(error)
     }
@@ -423,15 +480,17 @@ export const createTraderAccount = async (
         password,
         broker,
         server,
-        type
+        type,
     } = req.body
     try {
         if (type === "master" && !req.user.isAdmin) {
-            throw catchError('Invalid Operation')
+            throw catchError("Invalid Operation")
         }
 
-        if (!req.user.isAdmin && !req.user.verified)  {
-            throw catchError("You must verify your account before performing this action")
+        if (!req.user.isAdmin && !req.user.verified) {
+            throw catchError(
+                "You must verify your account before performing this action"
+            )
         }
         const [account, accountError] = await tryPromise(
             new TradeCopier().createAccount(
@@ -483,18 +542,19 @@ export const deleteAccount = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { id, isAdmin, } = req.user;
+    const { id, isAdmin } = req.user
     try {
         const [user, error] = await tryPromise(
             new UserService({ id }).findOne()
         )
 
-        if (error) throw catchError("Error processing your request. Try again later");
+        if (error)
+            throw catchError("Error processing your request. Try again later")
 
-        if (!user) throw catchError("Invalid Request.");
+        if (!user) throw catchError("Invalid Request.")
 
         if (user.meta?.account?.account_id) {
-            await new TradeCopier().deleteAccount(user.meta.account.account_id);
+            await new TradeCopier().deleteAccount(user.meta.account.account_id)
         }
 
         let [_, deleteError] = await tryPromise(
@@ -502,11 +562,13 @@ export const deleteAccount = async (
         )
         if (deleteError) throw catchError("Error processing your request", 400)
 
-        return res.status(200).json(
-            success(`${isAdmin ? "Admin" : 'User'} delete successful`, {})
-        )
+        return res
+            .status(200)
+            .json(
+                success(`${isAdmin ? "Admin" : "User"} delete successful`, {})
+            )
     } catch (error) {
-        next(error);
+        next(error)
     }
 }
 
@@ -516,48 +578,101 @@ export const getDashboardData = async (
     next: NextFunction
 ) => {
     try {
-        const [totalAdmin, totalUser, subscribedUser, unSubscribedUser, recentSubs, plans] = await Promise.all([
+        const [
+            totalAdmin,
+            totalUser,
+            subscribedUser,
+            unSubscribedUser,
+            recentSubs,
+            plans,
+        ] = await Promise.all([
             new UserService({ isAdmin: true }).countDocuments(),
             new UserService({ isAdmin: false }).countDocuments(),
-            new SubscriptionService({}).getSubscriptions(true, startOfMonth(new Date()).toISOString(), endOfMonth(new Date()).toISOString()),
-            new SubscriptionService({}).getSubscriptions(true, startOfMonth(subMonths(new Date(), 1)).toISOString(), endOfMonth(subMonths(new Date(), 1)).toISOString()),
+            new SubscriptionService({}).getSubscriptions(
+                true,
+                startOfMonth(new Date()).toISOString(),
+                endOfMonth(new Date()).toISOString()
+            ),
+            new SubscriptionService({}).getSubscriptions(
+                true,
+                startOfMonth(subMonths(new Date(), 1)).toISOString(),
+                endOfMonth(subMonths(new Date(), 1)).toISOString()
+            ),
             new SubscriptionService({}).findAll({}, 2),
-            new PlanService({}).findAll({}, 20)
+            new PlanService({}).findAll({}, 20),
         ])
-    
+
         const subscribers = subscribedUser.map(subs => {
-            const plan = plans.edges.find(item => String(item.id) === String(subs.plan))
+            const plan = plans.edges.find(
+                item => String(item.id) === String(subs.plan)
+            )
             return { ...subs, plan }
         })
-    
-        const unsubscribers = unSubscribedUser.map(subs => {
-            const plan = plans.edges.find(item => String(item.id) === String(subs.plan))
-            return { ...subs, plan }
-        }).filter(item => {
-            const subscription = subscribers.find(sub => String(sub.userId) === String(item.userId))
-    
-            if (!subscription) return item
-        }).filter(item => item)
-    
+
+        const unsubscribers = unSubscribedUser
+            .map(subs => {
+                const plan = plans.edges.find(
+                    item => String(item.id) === String(subs.plan)
+                )
+                return { ...subs, plan }
+            })
+            .filter(item => {
+                const subscription = subscribers.find(
+                    sub => String(sub.userId) === String(item.userId)
+                )
+
+                if (!subscription) return item
+            })
+            .filter(item => item)
+
         const userIds = recentSubs.edges.map(edge => String(edge.userId))
-    
-        const users = await new UserService({}).findAll({
+
+        const users = (await new UserService({}).findAll({
             // @ts-ignore
-            id: { [Op.in]: userIds }
-        }) as {edges: IUser[]};
-    
-        const recentSubscriptions = recentSubs.edges.map((edge) => {
-            const user = users.edges.find((item: IUser) => String(item.id) === String(edge.userId));
-            const plan = plans.edges.find(item => String(item.id) === String(edge.plan))
-    
-            return { ...edge, plan, userId: { firstName: user?.firstName, lastName: user?.lastName } }
+            id: { [Op.in]: userIds },
+        })) as { edges: IUser[] }
+
+        const recentSubscriptions = recentSubs.edges.map(edge => {
+            const user = users.edges.find(
+                (item: IUser) => String(item.id) === String(edge.userId)
+            )
+            const plan = plans.edges.find(
+                item => String(item.id) === String(edge.plan)
+            )
+
+            return {
+                ...edge,
+                plan,
+                userId: {
+                    firstName: user?.firstName,
+                    lastName: user?.lastName,
+                },
+            }
         })
-    
-        const actualBalance = subscribers.reduce((acc, curr) => acc + Number(curr.plan?.amount || 0), 0)
-        const pendingBalance = unsubscribers.reduce((acc, curr) => acc + Number(curr.plan?.amount || 0), 0)
-    
-        let currentMonthSubscription = groupByCreatedAt<ISubscription>(subscribedUser)
-        currentMonthSubscription = Object.keys(currentMonthSubscription).map(item => ({ [item]: currentMonthSubscription[item].length }))
+
+        const actualBalance = subscribers.reduce(
+            (acc, curr) => acc + Number(curr.plan?.amount || 0),
+            0
+        )
+        const pendingBalance = unsubscribers.reduce(
+            (acc, curr) => acc + Number(curr.plan?.amount || 0),
+            0
+        )
+
+        let currentMonthSubscription =
+            groupByCreatedAt<ISubscription>(subscribedUser)
+        currentMonthSubscription = Object.keys(currentMonthSubscription).map(
+            item => ({
+                date: item,
+                count: currentMonthSubscription[item].length,
+            })
+        )
+
+        let lastMonthSubscription =
+            groupByCreatedAt<ISubscription>(unSubscribedUser)
+        lastMonthSubscription = Object.keys(lastMonthSubscription).map(
+            item => ({ date: item, count: lastMonthSubscription[item].length })
+        )
 
         return res.status(200).json(
             success("Dashboard records", {
@@ -568,10 +683,11 @@ export const getDashboardData = async (
                 currentMonthSubscription,
                 pendingBalance,
                 actualBalance,
-                recentSubscriptions
+                recentSubscriptions,
+                lastMonthSubscription,
             })
         )
     } catch (error) {
-        next(error);
+        next(error)
     }
-};
+}

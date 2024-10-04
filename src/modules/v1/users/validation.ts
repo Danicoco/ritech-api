@@ -6,7 +6,7 @@ export const createSchema = [
     body('password').isStrongPassword({ minLength: 8, minSymbols: 1 }).withMessage('Enter a strong password').notEmpty().withMessage('Enter password'),
     body('firstName').isString().withMessage('Enter your firstName').notEmpty().withMessage('Enter first name'),
     body('lastName').isString().withMessage('Enter your lastName').notEmpty().withMessage('Enter last name'),
-    body('isAdmin').isBoolean().optional().default(true),
+    body('isAdmin').isBoolean().optional().default(false),
 ]
 
 export const loginSchema = [

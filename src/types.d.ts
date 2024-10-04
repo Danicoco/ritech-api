@@ -121,8 +121,7 @@ type ITradeCopierSettings = {
     global_stop_loss: 0 | 1
     global_stop_loss_value: number
     global_stop_loss_type: 0 | 1 | 2
-    global_take_profit: 0
-    1
+    global_take_profit: 0 | 1
     global_take_profit_value: number
     global_take_profit_type: 0 | 1 | 2
 }

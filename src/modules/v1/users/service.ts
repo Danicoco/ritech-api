@@ -20,6 +20,18 @@ class UserService extends BaseRepository<IUser>{
             }
         })
     }
+
+    public async findByIds (ids: string[]): Promise<IUser[]> {
+        const sub = await this.model.findAll({
+            where: {
+                id: {
+                    [Op.in]: ids
+                }
+            }
+        })
+
+        return sub;
+    }
 }
 
 export default UserService

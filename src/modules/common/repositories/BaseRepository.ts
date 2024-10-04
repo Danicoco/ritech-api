@@ -84,7 +84,7 @@ class BaseRepository<T> {
     }
 
     public async findAll(
-        params: Partial<T>,
+        params: Partial<T> | any,
         limit?: number,
         next = "",
         prev = "",
@@ -113,7 +113,7 @@ class BaseRepository<T> {
     }
 
     private async paginate(
-        params: IPaginator<Partial<T>>
+        params: IPaginator<Partial<T>> | any
     ): Promise<PaginateResponse<T>> {
         const { query, next, prev, limit, attributes, order } = params
 

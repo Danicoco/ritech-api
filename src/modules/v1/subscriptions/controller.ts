@@ -143,11 +143,13 @@ export const fetch = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { limit = 10, next: nextPage, prev } = req.query
+    const { limit = 10, next: nextPage, prev, admin } = req.query
     try {
         let subscriptions = await new SubscriptionService({}).findAll(
             {
-                userId: req.user.id,
+                ...(!admin && {
+                    userId: req.user.id,
+                })
             },
             Number(limit),
             String(nextPage),
@@ -171,6 +173,27 @@ export const fetch = async (
                 })
                 subscriptions.edges = data
             }
+        }
+
+        if (admin) {
+            const userIds = subscriptions.edges.map(edge => String(edge.userId))
+
+        if (userIds.length) {
+            const [users] = await tryPromise(new UserService({}).findByIds(userIds))
+
+            if (users?.length) {
+                const data = subscriptions.edges.map(edge => {
+                    const user = users.find(
+                        item => String(item.id) === String(edge.userId)
+                    )
+                    // @ts-ignore
+                    if (user) edge.user = user
+
+                    return edge
+                })
+                subscriptions.edges = data
+            }
+        }
         }
 
         return res

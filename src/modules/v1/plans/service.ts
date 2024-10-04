@@ -11,7 +11,7 @@ class PlanService extends BaseRepository<IPlan>{
     }
 
     public async findByIds (ids: string[]): Promise<IPlan[]> {
-        const sub = await this.model.findAll({
+        const sub = await db.plan.findAll({
             where: {
                 id: {
                     [Op.in]: ids

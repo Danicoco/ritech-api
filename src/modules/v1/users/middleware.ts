@@ -10,10 +10,10 @@ export const validateExistingUser = async (
     next: NextFunction
 ) => {
     try {
-        const { email, phoneNumber } = req.body
+        const { email, phoneNumber, isAdmin } = req.body
 
         const [emailExist, emailErr] = await tryPromise(
-            new UserService({ email }).findOne()
+            new UserService({ email, isAdmin }).findOne()
         )
 
         if (emailErr) throw catchError("Account already exist.", 400)

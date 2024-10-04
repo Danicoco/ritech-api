@@ -15,6 +15,7 @@ import {
     changePassword,
     create,
     createTraderAccount,
+    fetch,
     forgetPassword,
     get,
     getDashboardData,
@@ -43,8 +44,11 @@ userRouter.post(
 userRouter.post("/resend-otp", forgetPasswordSchema, validate, resendOTP)
 userRouter.post("/verify-login", validateOtpSchema, validate, verifyLogin)
 userRouter.patch("/profile", Authenticate, updateProfileSchema, validate, update)
+userRouter.patch("/profile/:id", Authenticate, updateProfileSchema, validate, update)
 userRouter.delete("/", Authenticate, remove)
+userRouter.delete("/:id", Authenticate, remove)
 userRouter.get("/profile", Authenticate, get)
+userRouter.get("/", Authenticate, fetch)
 userRouter.get("/dashboard", Authenticate, getDashboardData)
 userRouter.post("/copier-account", Authenticate, createCopierSchema, validate, createTraderAccount)
 userRouter.patch("/verify-account", validateOtpSchema, validate, verifyAccount)
