@@ -51,17 +51,21 @@ export const fetchPosition = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { start = 1, length = 10, type } = req.query
+    const { start = 1, length = 10 } = req.query
+   const type = req.query.type;
     try {
+        delete req.query.type;
         const [positions, error] = await tryPromise(
             type === "close"
                 ? new TradeCopier().getClosedPositions({
                       start: Number(start),
                       length: Number(length),
+                      ...req.query
                   })
                 : new TradeCopier().getOpenPositions({
                       start: Number(start),
                       length: Number(length),
+                      ...req.query
                   })
         )
 
