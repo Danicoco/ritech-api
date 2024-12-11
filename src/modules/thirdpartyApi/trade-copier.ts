@@ -64,7 +64,7 @@ class TradeCopier {
         const { data } = await this.http()
             .post("/account/deleteAccount.php", this.getBody(body))
             .catch((e: AxiosError) => {
-                throw catchError(e.response?.data.message)
+                throw catchError(e.response?.data.message || e.response?.statusText)
             })
 
         return data

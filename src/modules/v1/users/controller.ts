@@ -50,6 +50,7 @@ export const create = async (
 
         if (userErr) {
             await transaction.rollback()
+            console.log(userErr);
             throw catchError(
                 "There was an error on our end while creating your account. Please try again!",
                 500
@@ -58,8 +59,11 @@ export const create = async (
 
         await transaction.commit()
 
+        console.log(req.body);
+
         if (!req.body.isAdmin) {
             // send email
+            console.log("Mail will be sent");
             sendMail({
                 name: `${firstName} ${lastName}`,
                 email,

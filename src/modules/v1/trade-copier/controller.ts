@@ -328,6 +328,7 @@ export const deleteCopier = async (
 ) => {
     const { accountId, } = req.query;
     try {
+        console.log({accountId});
         await new TradeCopier().deleteAccount(accountId as string);
 
         return res.status(200).json(
