@@ -1,6 +1,7 @@
 /** @format */
 
-import { ICard, IPlan, IUser } from "../../../types"
+import { ICard, IPlan, IUser, StaticVirtualAccount } from "../../../types"
+import { createReference } from "../../common/utils"
 import CardService from "../cards/service"
 import SubscriptionService from "./service"
 import { addMonths, addYears } from "date-fns"
@@ -47,4 +48,42 @@ export const composeCardPayment = async (
     }
 
     return data
+}
+
+type Props = {
+    user: IUser;
+    amount: number;
+    description: string;
+    accountNumber: string;
+    bankCode: string;
+    fee: number;
+}
+
+export const composeVirtual = ({ user, amount, description, accountNumber, bankCode, fee }: Props): StaticVirtualAccount => {
+    return {
+        transaction: {
+            reference: createReference('RIT'),
+        },
+        order: {
+            amount,
+            country: 'NGA',
+            currency: 'NGN',
+            description,
+            amounttype: 'EXACT'
+        },
+        customer: {
+            account: {
+                name: `${user.firstName} ${user.lastName}`,
+                type: 'DYNAMIC',
+                expiry: {
+                    hours: 1,
+                }
+            }
+        },
+        beneficiarytocredit: {
+            accountumber:accountNumber,
+            bankcode: bankCode,
+            feeamount: Number(fee)
+        }
+    }
 }

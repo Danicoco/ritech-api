@@ -254,6 +254,40 @@ interface IPaginator<T> {
     populate?: string
 }
 
+type StaticVirtualAccount = {
+    transaction: {
+        reference: string
+    }
+    order: {
+        amount: number
+        currency: "NGN"
+        description: string
+        country: "NGA"
+        amounttype: "EXACT"
+    }
+    customer: {
+        account: {
+            name: string
+            type: "DYNAMIC"
+            expiry: {
+                hours: number
+            }
+        }
+    }
+    beneficiarytocredit: {
+        accountumber: string
+        bankcode: string
+        feeamount: number;
+    }
+}
+
+type ConfirmPSB9Payment = {
+    reference: string
+    sessionid: string
+    amount: number
+    accountnumber: string
+}
+
 type IMail = { name: string; email: string; subject: string; message: string }
 
 type CreateErr = (message: string, code?: number, validations?: object) => Error

@@ -3,28 +3,29 @@
 import { NextFunction, Request, Response } from "express"
 import {
     catchError,
-    createReference,
     success,
     tryPromise,
 } from "../../common/utils"
 import PlanService from "../plans/service"
-import { configs } from "../../common/utils/config"
-import Paystack from "../../thirdpartyApi/paystack"
-import CardService from "../cards/service"
-import { composeCardPayment } from "./helper"
+import { composeVirtual } from "./helper"
 import SubscriptionService from "./service"
 import UserService from "../users/service"
 import agenda from "../../common/queue/agenda"
 import { Queue_Identifier } from "../../common/queue/identifiers"
+import PSB9 from "../../thirdpartyApi/9payment"
+import { addMonths, addYears } from "date-fns"
 
 export const subscribe = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    const { planId, userId } = req.query
+    const { planId, amount, accountNumber, bankCode, fee } = req.body
     try {
-        const user = await new UserService({ id: String(userId) }).findOne()
+        const [user, plan] = await Promise.all([
+            new UserService({ id: String(req.user.id) }).findOne(),
+            new PlanService({ id: String(planId) }).findOne(),
+        ])
         if (!user) {
             throw catchError("Unrecognized user")
         }
@@ -34,7 +35,6 @@ export const subscribe = async (
                 "You've to verify your account before subscribing",
                 400
             )
-        const plan = await new PlanService({ id: String(planId) }).findOne()
 
         if (!plan)
             throw catchError("Invalid plan selected. Try again later", 400)
@@ -46,39 +46,24 @@ export const subscribe = async (
             if (sub?.isActive) throw catchError("You've a active subscription.")
         }
 
-        const reference = createReference("PLAN")
+        const payload = composeVirtual({
+            fee,
+            user,
+            amount,
+            bankCode,
+            accountNumber,
+            description: `Subscribing to plan ${plan.name}`,
+        })
 
-        await agenda.schedule(
-            "in 1 minute",
-            Queue_Identifier.INITIATE_SUBSCRIPTION,
-            { reference, planId, user }
-        )
-        await agenda.schedule(
-            "in 2 minutes",
-            Queue_Identifier.INITIATE_SUBSCRIPTION,
-            { reference, planId, user }
-        )
+        const transaction = await new PSB9().createStaticVirtualAccount({ ...payload })
+
         await agenda.schedule(
             "in 5 minutes",
             Queue_Identifier.INITIATE_SUBSCRIPTION,
-            { reference, planId, user }
-        )
+            { reference: transaction.transaction.reference, planId, user, accountNumber: transaction.customer.account.number, amount }
+        );
 
-        return res.render("payment.ejs", {
-            email: user.email,
-            reference,
-            customerId: user.id,
-            amount: plan.amount * 100,
-            currency: plan.currency,
-            paymentType: `subscribe to ${plan.name}`,
-            phone: user.phoneNumber || "",
-            base_url: configs.BACKEND_URL,
-            fullName: `${user.firstName} ${user.lastName}`,
-            key:
-                configs.PAYSTACK_ENV === "production"
-                    ? configs.PAYSTACK_PROD_PUBLIC_KEY
-                    : configs.PAYSTACK_PUBLIC_KEY,
-        })
+        return res.status(200).json(success('Dynamic account available', { details: transaction?.customer, reference: transaction?.transaction.reference }))
     } catch (error) {
         next(error)
     }
@@ -89,7 +74,7 @@ export const create = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { reference, planId } = req.body
+    const { reference, planId, accountNumber, amount } = req.body
     try {
         const subscription = await new SubscriptionService({
             plan: planId,
@@ -100,39 +85,44 @@ export const create = async (
         if (subscription)
             throw catchError("Subscription already processed", 400)
 
-        const paystack = await new Paystack(reference).verifyTransaction()
+        const transaction = await new PSB9().confirmPayment({
+            reference,
+            sessionid: "",
+            amount,
+            accountnumber: accountNumber,
+        })
 
-        if (!paystack)
+        if (!transaction?.transactions?.length)
             throw catchError(
-                "We're unable to process your payment. Please contact support if issue persist!"
+                "Your payment is still pending!"
             )
-
-        const [card, plan] = await Promise.all([
-            new CardService({
-                lastFour: paystack.authorization.last4,
-                userId: req.user.id,
-            }).findOne(),
+        const [plan] = await Promise.all([
             new PlanService({ id: planId }).findOne(),
         ])
 
         if (!plan) throw catchError("Invalid Plan selected", 400)
 
-        const dataToProcess = await composeCardPayment(
-            req.user,
-            plan,
-            card,
-            paystack
-        )
-        const paymentDone = await Promise.all(dataToProcess)
-        await agenda.schedule(
-            `${plan.interval === "monthly" ? "in one month" : "in one year"}`,
-            Queue_Identifier.RENEW_SUBSCRIPTION,
-            { userId: req.user.id }
-        )
+            await new SubscriptionService({}).create({
+                isActive: true,
+                paidAt: new Date(),
+                expiresAt:
+                    plan.interval === "monthly"
+                        ? addMonths(new Date(), 1)
+                        : addYears(new Date(), 1),
+                plan: String(plan.id),
+                reference: reference,
+                userId: String(req.user.id)
+            });
+    
+            await agenda.schedule(
+                `${plan.interval === "monthly" ? "in one month" : "in one year"}`,
+                Queue_Identifier.DEACTIVATE_SUBSCRIPTION,
+                { userId: req.user.id }
+            )
 
         return res
             .status(200)
-            .json(success("Card payment successfully", paymentDone))
+            .json(success("Payment successfully", {}))
     } catch (error) {
         next(error)
     }
@@ -149,7 +139,7 @@ export const fetch = async (
             {
                 ...(!admin && {
                     userId: req.user.id,
-                })
+                }),
             },
             Number(limit),
             String(nextPage),
@@ -178,22 +168,24 @@ export const fetch = async (
         if (admin) {
             const userIds = subscriptions.edges.map(edge => String(edge.userId))
 
-        if (userIds.length) {
-            const [users] = await tryPromise(new UserService({}).findByIds(userIds))
+            if (userIds.length) {
+                const [users] = await tryPromise(
+                    new UserService({}).findByIds(userIds)
+                )
 
-            if (users?.length) {
-                const data = subscriptions.edges.map(edge => {
-                    const user = users.find(
-                        item => String(item.id) === String(edge.userId)
-                    )
-                    // @ts-ignore
-                    if (user) edge.user = user
+                if (users?.length) {
+                    const data = subscriptions.edges.map(edge => {
+                        const user = users.find(
+                            item => String(item.id) === String(edge.userId)
+                        )
+                        // @ts-ignore
+                        if (user) edge.user = user
 
-                    return edge
-                })
-                subscriptions.edges = data
+                        return edge
+                    })
+                    subscriptions.edges = data
+                }
             }
-        }
         }
 
         return res

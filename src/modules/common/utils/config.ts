@@ -33,6 +33,9 @@ export const configs = {
     TRADE_COPIER_BASE_URL: getEnv("TRADE_COPIER_BASE_URL"),
     TRADE_COPIER_USERNAME: getEnv("TRADE_COPIER_USERNAME"),
     TRADE_COPIER_SUB: getEnv("TRADE_COPIER_SUB"),
+    PSB_PUBLIC_KEY: getEnv("PSB_PUBLIC_KEY"),
+    PSB_PRIVATE_KEY: getEnv("PSB_PRIVATE_KEY"),
+    PSB_BASE_URL: getEnv("PSB_BASE_URL"),
 }
 
 validateEnvs(Object.keys(configs))

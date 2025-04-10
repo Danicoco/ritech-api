@@ -6,7 +6,7 @@ import { create, fetch, get, subscribe } from "./controller";
 const subscriptionRouter = Router();
 
 subscriptionRouter.post('/', Authenticate, createSchema, validate, create);
-subscriptionRouter.get('/pay', subscribe);
+subscriptionRouter.post('/pay', Authenticate, subscribe);
 subscriptionRouter.get('/history', Authenticate, fetch);
 subscriptionRouter.get('/current', Authenticate, get);
 
