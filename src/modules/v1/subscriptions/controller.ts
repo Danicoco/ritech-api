@@ -14,13 +14,14 @@ import agenda from "../../common/queue/agenda"
 import { Queue_Identifier } from "../../common/queue/identifiers"
 import PSB9 from "../../thirdpartyApi/9payment"
 import { addMonths, addYears } from "date-fns"
+import { configs } from "../../common/utils/config"
 
 export const subscribe = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    const { planId, amount, accountNumber, bankCode, fee } = req.body
+    const { planId, amount, fee } = req.body
     try {
         const [user, plan] = await Promise.all([
             new UserService({ id: String(req.user.id) }).findOne(),
@@ -50,8 +51,8 @@ export const subscribe = async (
             fee,
             user,
             amount,
-            bankCode,
-            accountNumber,
+            bankCode: configs.PSB_BANK_CODE,
+            accountNumber: configs.PSB_ACCOUNT,
             description: `Subscribing to plan ${plan.name}`,
         })
 

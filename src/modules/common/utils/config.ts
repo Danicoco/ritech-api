@@ -36,6 +36,8 @@ export const configs = {
     PSB_PUBLIC_KEY: getEnv("PSB_PUBLIC_KEY"),
     PSB_PRIVATE_KEY: getEnv("PSB_PRIVATE_KEY"),
     PSB_BASE_URL: getEnv("PSB_BASE_URL"),
+    PSB_ACCOUNT: getEnv("PSB_ACCOUNT"),
+    PSB_BANK_CODE: getEnv("PSB_BANK_CODE"),
 }
 
 validateEnvs(Object.keys(configs))
