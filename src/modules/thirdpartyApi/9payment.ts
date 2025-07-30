@@ -20,8 +20,7 @@ class PSB9 {
 
     public async createStaticVirtualAccount(payload: StaticVirtualAccount) {
         const token = await this.token()
-        console.log({ token })
-        const { data } = await axios.post(
+        const data = await axios.post(
             `${configs.PSB_BASE_URL}/v1/merchant/virtualaccount/create`,
             payload,
             {
@@ -30,7 +29,8 @@ class PSB9 {
                 },
             }
         )
-        return data
+        console.log(data, "Create Account")
+        return data.data;
     }
 
     public async confirmPayment(payload: ConfirmPSB9Payment) {
