@@ -56,6 +56,9 @@ export const subscribe = async (
             description: `Subscribing to plan ${plan.name}`,
         })
 
+
+        console.log({payload})
+
         const transaction = await new PSB9().createStaticVirtualAccount({ ...payload })
 
         await agenda.schedule(
