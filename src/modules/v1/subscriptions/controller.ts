@@ -228,3 +228,15 @@ export const get = async (req: Request, res: Response, next: NextFunction) => {
         next(error)
     }
 }
+
+export const settlement = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        console.log({ settlemntBody: req.body });
+
+        return res
+            .status(200)
+            .json(success("Payment settled", {}))
+    } catch (error) {
+        next(error)
+    }
+}
