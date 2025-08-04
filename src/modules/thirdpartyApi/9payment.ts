@@ -11,10 +11,15 @@ class PSB9 {
             publickey: configs.PSB_PUBLIC_KEY,
             privatekey: configs.PSB_PRIVATE_KEY,
         }
+        console.log({ url: `${configs.PSB_BASE_URL}/v1/merchant/virtualaccount/authenticate` });
+        console.log({ tokenBody: body });
         const { data } = await axios.post(
             `${configs.PSB_BASE_URL}/v1/merchant/virtualaccount/authenticate`,
             body
-        )
+        ).catch((e: AxiosError) => {
+            console.log({ tokenErr: e.response });
+            throw catchError(e.message);
+        })
 
         return data?.access_token;
     }
