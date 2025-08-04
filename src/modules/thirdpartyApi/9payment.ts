@@ -1,8 +1,9 @@
 /** @format */
 
-import axios from "axios"
+import axios, { AxiosError } from "axios"
 import { ConfirmPSB9Payment, StaticVirtualAccount } from "../../types"
 import { configs } from "../common/utils/config"
+import { catchError } from "../common/utils"
 
 class PSB9 {
     private async token() {
@@ -28,7 +29,10 @@ class PSB9 {
                     Authorization: `Bearer ${token}`,
                 },
             }
-        )
+        ).catch((e: AxiosError) => {
+            console.log(e.response);
+            throw catchError("Error creating account", 400);
+        })
         console.log(data, "Create Account")
         return data.data;
     }
