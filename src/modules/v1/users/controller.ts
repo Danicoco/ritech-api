@@ -94,7 +94,7 @@ export const verifyAccount = async (
         const hashedOtp = createHash215(otp)
 
         const [user, error] = await tryPromise(
-            new UserService({ email }).findOne()
+            new UserService({ email: email.toLowerCase() }).findOne()
         )
 
         if (error) throw catchError("Error processing request")
@@ -130,7 +130,7 @@ export const login = async (
     const { email, password, isAdmin } = req.body
     try {
         let [userExist, error] = await tryPromise(
-            new UserService({ email, isAdmin }).findOne()
+            new UserService({ email: email.toLowerCase(), isAdmin }).findOne()
         )
 
         if (error)
@@ -181,7 +181,7 @@ export const changePassword = async (
     const { email, password, otp } = req.body
     try {
         const [user, error] = await tryPromise(
-            new UserService({ email }).findOne()
+            new UserService({ email: email.toLowerCase(), }).findOne()
         )
 
         if (error) throw catchError("Internal Server Error", 500)
@@ -219,7 +219,7 @@ export const forgetPassword = async (
     const otp = randomInt(1000, 9999)
     try {
         const [user, error] = await tryPromise(
-            new UserService({ email }).findOne()
+            new UserService({ email: email.toLowerCase() }).findOne()
         )
 
         if (error) throw catchError("Error processing your request", 500)
@@ -258,7 +258,7 @@ export const validateOTP = async (
     try {
         const convertOTP = createHash215(otp)
         const [user, error] = await tryPromise(
-            new UserService({ email }).findOne()
+            new UserService({ email: email.toLowerCase(), }).findOne()
         )
 
         if (error) throw catchError("Error processing request", 400)
@@ -282,9 +282,10 @@ export const resendOTP = async (
     try {
         const { type = "forget-password" } = req.body
         const otp = randomInt(1000, 9999)
+        req.body.email = req.body.email.toLowerCase();
 
         const [user] = await tryPromise(
-            new UserService({ email: req.body.email }).findOne()
+            new UserService({ email: req.body.email.toLowerCase(), }).findOne()
         )
 
         if (!user) {
@@ -326,6 +327,8 @@ export const verifyLogin = async (
     res: Response,
     next: NextFunction
 ) => {
+    req.body.email = req.body.email.toLowerCase();
+
     const { email, otp } = req.body
     try {
         const [user, error] = await tryPromise(
