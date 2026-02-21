@@ -10,7 +10,8 @@ export const validateExistingUser = async (
     next: NextFunction
 ) => {
     try {
-        const { email, phoneNumber, isAdmin } = req.body
+        const { email: userEmail, phoneNumber, isAdmin } = req.body
+        const email = userEmail.toLowerCase();
 
         const [emailExist, emailErr] = await tryPromise(
             new UserService({ email, isAdmin }).findOne()

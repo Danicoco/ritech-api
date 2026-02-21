@@ -40,6 +40,7 @@ export const create = async (
             new UserService({}).create(
                 {
                     ...req.body,
+                    email: req.body.email.toLowerCase(),
                     hasMFA: false,
                     otp: createHash215(otp.toString()),
                     password: hashPassword(req.body.password),

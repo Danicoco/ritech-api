@@ -61,6 +61,8 @@ export const subscribe = async (
 
         const transaction = await new PSB9().createStaticVirtualAccount({ ...payload })
 
+        console.log({ transaction })
+
         await agenda.schedule(
             "in 5 minutes",
             Queue_Identifier.INITIATE_SUBSCRIPTION,
