@@ -8,6 +8,8 @@ import User from "./user"
 import Plan from "./plan"
 import Card from "./card"
 import Subscription from "./subscription"
+import Wallet from "./wallet"
+import Transaction from "./transaction"
 
 const { NODE_ENV = "development" } = process.env
 
@@ -34,7 +36,9 @@ const db = {
     user: User(sequelize),
     plan: Plan(sequelize),
     card: Card(sequelize),
-    subscription: Subscription(sequelize)
+    wallet: Wallet(sequelize),
+    transaction: Transaction(sequelize),
+    subscription: Subscription(sequelize),
 }
 
 Object.keys(db).forEach((modelName: string) => {

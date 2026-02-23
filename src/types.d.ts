@@ -180,6 +180,29 @@ interface ISubscription extends DefaultAttributes {
     ritechPlanId?: string
 }
 
+interface IWallet extends DefaultAttributes {
+    user: string;
+    balance: number;
+    ledgerBalance: number;
+    currency: 'NGN' | 'USD',
+}
+
+type TransactionStatus = "pending" | "successful" | "failed"
+type TransactionType = "credit" | "debit"
+
+interface ITransaction extends DefaultAttributes {
+    user: string
+    fee: number
+    amount: number
+    wallet: string
+    status: TransactionStatus
+    type: TransactionType
+    description: string
+    reference: string
+    currency: string
+    meta?: Record<string, any>
+}
+
 interface Payment extends DefaultAttributes {}
 
 type PaystackResponseData = {

@@ -4,13 +4,16 @@ import { Agenda } from "@hokify/agenda"
 import { Queue_Identifier } from "../queue/identifiers"
 import UserService from "../../v1/users/service"
 import SubscriptionService from "../../v1/subscriptions/service"
-import { addMonths, addYears, differenceInDays } from "date-fns"
+import { differenceInDays } from "date-fns"
 import { catchError, createReference } from "../utils"
 import Paystack from "../../thirdpartyApi/paystack"
 import CardService from "../../v1/cards/service"
 import PlanService from "../../v1/plans/service"
 import { composeCardPayment } from "../../v1/subscriptions/helper"
 import PSB9 from "../../thirdpartyApi/9payment"
+import db from "../../../database/postgres/models"
+import { Transaction } from "sequelize"
+import { creditWallet } from "../../v1/wallets/helper"
 
 export const renewSubscription = async (agenda: Agenda) => {
     agenda.define(Queue_Identifier.RENEW_SUBSCRIPTION, async (job, done) => {
@@ -94,6 +97,7 @@ export const deactivateSubscription = async (agenda: Agenda) => {
     )
 }
 
+// Fund naira wallet 
 export const subscribeAfterPayment = async (agenda: Agenda) => {
     agenda.define(Queue_Identifier.INITIATE_SUBSCRIPTION, async (job, done) => {
         const { reference, planId, user, accountNumber, amount } = job.attrs.data
@@ -118,29 +122,22 @@ export const subscribeAfterPayment = async (agenda: Agenda) => {
                 "We're unable to process your payment. Please contact support if issue persist!"
             )
 
-        const [plan] = await Promise.all([
-            new PlanService({ id: planId }).findOne(),
-        ])
-
-        if (!plan) throw catchError("Invalid Plan selected", 400)
-
-        await new SubscriptionService({}).create({
-            isActive: true,
-            paidAt: new Date(),
-            expiresAt:
-                plan.interval === "monthly"
-                    ? addMonths(new Date(), 1)
-                    : addYears(new Date(), 1),
-            plan: String(plan.id),
-            reference: reference,
-            userId: String(user.id)
-        });
-
-        await agenda.schedule(
-            `${plan.interval === "monthly" ? "in one month" : "in one year"}`,
-            Queue_Identifier.DEACTIVATE_SUBSCRIPTION,
-            { userId: user.id }
-        )
+        const trans = await db.sequelize.transaction({
+            autocommit: false,
+            isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
+            type: Transaction.TYPES.EXCLUSIVE,
+        })
+        // credit target wallet
+        await creditWallet({
+            userId: String(user),
+            session: trans,
+            amount,
+            pendingTransaction: false,
+            transactionMeta: { ...job.attrs.data },
+            name: `${user.firstName} ${user.lastName}`,
+            currency: 'NGN',
+        })
+        await trans.commit();
         done()
     })
 }
