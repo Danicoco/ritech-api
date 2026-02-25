@@ -4,7 +4,7 @@ import { Agenda } from "@hokify/agenda"
 import { Queue_Identifier } from "../queue/identifiers"
 import UserService from "../../v1/users/service"
 import SubscriptionService from "../../v1/subscriptions/service"
-import { differenceInDays } from "date-fns"
+import { addMonths, addYears, differenceInDays } from "date-fns"
 import { catchError, createReference } from "../utils"
 import Paystack from "../../thirdpartyApi/paystack"
 import CardService from "../../v1/cards/service"
@@ -13,7 +13,9 @@ import { composeCardPayment } from "../../v1/subscriptions/helper"
 import PSB9 from "../../thirdpartyApi/9payment"
 import db from "../../../database/postgres/models"
 import { Transaction } from "sequelize"
-import { creditWallet } from "../../v1/wallets/helper"
+import sendMail from "../utils/email"
+import RenewSubscription from "../templates/renew-sub"
+import { getNairaRate } from "../../v1/wallets/helper"
 
 export const renewSubscription = async (agenda: Agenda) => {
     agenda.define(Queue_Identifier.RENEW_SUBSCRIPTION, async (job, done) => {
@@ -88,27 +90,39 @@ export const deactivateSubscription = async (agenda: Agenda) => {
                         id: subscription?.id,
                     }).update({ isActive: false })
                     await new UserService({
-                        id
+                        id,
                     }).update({ subscriptionId: "" })
                 }
+
+                // send email
+                sendMail({
+                    name: `${user.firstName} ${user.lastName}`,
+                    email: user.email,
+                    subject: `Your subscription has expired`,
+                    message: RenewSubscription(user.firstName),
+                })
             }
             done()
         }
     )
 }
 
-// Fund naira wallet 
+// Fund naira wallet
 export const subscribeAfterPayment = async (agenda: Agenda) => {
     agenda.define(Queue_Identifier.INITIATE_SUBSCRIPTION, async (job, done) => {
-        const { reference, planId, user, accountNumber, amount } = job.attrs.data
+        const { reference, planId, user, accountNumber, amount } =
+            job.attrs.data
         const subscription = await new SubscriptionService({
             plan: planId,
             reference,
             userId: user.id,
-        }).findOne();
+        }).findOne()
 
-        if (subscription)
+        if (subscription && subscription.isActive)
             throw catchError("Subscription already processed", 400)
+
+        const plan = await new PlanService({}).findOne()
+        if (!plan) throw catchError("Plan not found")
 
         const transaction = await new PSB9().confirmPayment({
             reference,
@@ -122,22 +136,44 @@ export const subscribeAfterPayment = async (agenda: Agenda) => {
                 "We're unable to process your payment. Please contact support if issue persist!"
             )
 
+        const amountPaid = transaction?.transactions[0]?.order?.amount;
+        const nairaRate = await getNairaRate()
+        const amountToPay = plan.currency === "USD" ? Number(plan.amount) * Number(nairaRate || 1) : plan.amount;
+
+        if (Number(amountToPay) > Number(amountPaid)) {
+            throw catchError("Amount paid is less than amount to pay")
+        }
+
         const trans = await db.sequelize.transaction({
             autocommit: false,
             isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
             type: Transaction.TYPES.EXCLUSIVE,
         })
-        // credit target wallet
-        await creditWallet({
-            userId: String(user),
-            session: trans,
-            amount,
-            pendingTransaction: false,
-            transactionMeta: { ...job.attrs.data },
-            name: `${user.firstName} ${user.lastName}`,
-            currency: 'NGN',
-        })
-        await trans.commit();
+        if (!subscription) {
+            await new SubscriptionService({}).create({
+                isActive: true,
+                paidAt: new Date(),
+                expiresAt:
+                    plan.interval === "monthly"
+                        ? addMonths(new Date(), 1)
+                        : addYears(new Date(), 1),
+                plan: String(plan.id),
+                reference: reference,
+                userId: String(user.id),
+            })
+        } else {
+            await new SubscriptionService({ id: subscription.id }).update({
+                isActive: true,
+                paidAt: new Date(),
+                expiresAt:
+                    plan.interval === "monthly"
+                        ? addMonths(new Date(), 1)
+                        : addYears(new Date(), 1),
+                plan: String(plan.id),
+                reference: reference,
+            })
+        }
+        await trans.commit()
         done()
     })
 }

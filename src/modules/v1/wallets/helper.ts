@@ -16,13 +16,13 @@ type Props = {
     description: string
     isWithdrawal: boolean
     pendingTransaction: boolean
-    currency: 'NGN' | 'USD'
+    currency: "NGN" | "USD"
     transactionMeta?: Record<string, any>
 }
 
 export const debitWallet = async (params: Props) => {
     const { userId, session, amount, currency, fee = 0 } = params
-    const totalAmount = Number(amount) + Number(fee);
+    const totalAmount = Number(amount) + Number(fee)
     const [wallet, error] = await tryPromise(getWallet(userId, currency))
 
     if (error) throw catchError("Error processing request")
@@ -35,7 +35,7 @@ export const debitWallet = async (params: Props) => {
         composeTransactionDoc({
             wallet,
             amount,
-            fee, 
+            fee,
             description: params.description,
             status: params.pendingTransaction
                 ? TRANSACTION_STATUS.PENDING
@@ -47,11 +47,13 @@ export const debitWallet = async (params: Props) => {
     const [currentWallet] = await Promise.all([
         new WalletService({ id: wallet.id }).update(
             {
-                balance: Number((Number(wallet.balance) - Number(totalAmount)).toFixed(2)),                
+                balance: Number(
+                    (Number(wallet.balance) - Number(totalAmount)).toFixed(2)
+                ),
             },
             session
         ),
-    ])    
+    ])
 
     return { currentWallet, trans }
 }
@@ -63,7 +65,7 @@ type CreditProps = {
     pendingTransaction: boolean
     transactionMeta?: Record<string, any>
     name: string
-    currency: 'NGN' | 'USD'
+    currency: "NGN" | "USD"
 }
 
 export const creditWallet = async (params: CreditProps) => {
@@ -89,7 +91,7 @@ export const creditWallet = async (params: CreditProps) => {
     const [currentWallet] = await Promise.all([
         new WalletService({ id: wallet.id }).update(
             {
-                balance: Number(wallet.balance) + Number(amount),                
+                balance: Number(wallet.balance) + Number(amount),
             },
             session
         ),
@@ -98,16 +100,27 @@ export const creditWallet = async (params: CreditProps) => {
     return { currentWallet, transaction }
 }
 
-export const getWallet = async (user: string, currency: 'NGN' | 'USD') => {
+export const getWallet = async (user: string, currency: "NGN" | "USD") => {
     let wallet = await new WalletService({ user }).findOne()
     if (!wallet) {
         wallet = await new WalletService({}).create({
             user,
             balance: 0,
             ledgerBalance: 0,
-            currency
+            currency,
         })
     }
 
-    return wallet;
+    return wallet
+}
+
+export const getNairaRate = async (): Promise<number | null> => {
+    try {
+        const res = await fetch("https://cdn.moneyconvert.net/api/latest.json")
+        const data = await res.json()
+        const usdToNgn = data.rates.NGN
+        return usdToNgn        
+    } catch (error) {
+        return null
+    }
 }

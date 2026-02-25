@@ -1,11 +1,7 @@
 /** @format */
 
 import { NextFunction, Request, Response } from "express"
-import {
-    catchError,
-    success,
-    tryPromise,
-} from "../../common/utils"
+import { catchError, success, tryPromise } from "../../common/utils"
 import PlanService from "../plans/service"
 import { composeVirtual } from "./helper"
 import SubscriptionService from "./service"
@@ -56,20 +52,34 @@ export const subscribe = async (
             description: `Subscribing to plan ${plan.name}`,
         })
 
+        console.log({ payload })
 
-        console.log({payload})
-
-        const transaction = await new PSB9().createStaticVirtualAccount({ ...payload })
+        const transaction = await new PSB9().createStaticVirtualAccount({
+            ...payload,
+        })
 
         console.log({ transaction })
 
         await agenda.schedule(
             "in 5 minutes",
             Queue_Identifier.INITIATE_SUBSCRIPTION,
-            { reference: transaction.transaction.reference, planId, user, accountNumber: transaction.customer.account.number, amount }
-        );
+            {
+                reference: transaction.transaction.reference,
+                planId,
+                user,
+                accountNumber: transaction.customer.account.number,
+                amount,
+            }
+        )
 
-        return res.status(200).json(success('Dynamic account available', { details: transaction?.customer, reference: transaction?.transaction.reference }))
+        return res
+            .status(200)
+            .json(
+                success("Dynamic account available", {
+                    details: transaction?.customer,
+                    reference: transaction?.transaction.reference,
+                })
+            )
     } catch (error) {
         next(error)
     }
@@ -88,7 +98,7 @@ export const create = async (
             userId: req.user.id,
         }).findOne()
 
-        if (subscription)
+        if (subscription && subscription.isActive)
             throw catchError("Subscription already processed", 400)
 
         const transaction = await new PSB9().confirmPayment({
@@ -99,15 +109,14 @@ export const create = async (
         })
 
         if (!transaction?.transactions?.length)
-            throw catchError(
-                "Your payment is still pending!"
-            )
+            throw catchError("Your payment is still pending!")
         const [plan] = await Promise.all([
             new PlanService({ id: planId }).findOne(),
         ])
 
         if (!plan) throw catchError("Invalid Plan selected", 400)
 
+        if (!subscription) {
             await new SubscriptionService({}).create({
                 isActive: true,
                 paidAt: new Date(),
@@ -117,18 +126,29 @@ export const create = async (
                         : addYears(new Date(), 1),
                 plan: String(plan.id),
                 reference: reference,
-                userId: String(req.user.id)
-            });
-    
-            await agenda.schedule(
-                `${plan.interval === "monthly" ? "in one month" : "in one year"}`,
-                Queue_Identifier.DEACTIVATE_SUBSCRIPTION,
-                { userId: req.user.id }
-            )
+                userId: String(req.user.id),
+            })
+        } else {
+            await new SubscriptionService({ id: subscription.id }).update({
+                isActive: true,
+                paidAt: new Date(),
+                expiresAt:
+                    plan.interval === "monthly"
+                        ? addMonths(new Date(), 1)
+                        : addYears(new Date(), 1),
+                plan: String(plan.id),
+                reference: reference,
+            })
+        }
 
-        return res
-            .status(200)
-            .json(success("Payment successfully", {}))
+
+        await agenda.schedule(
+            `${plan.interval === "monthly" ? "in one month" : "in one year"}`,
+            Queue_Identifier.DEACTIVATE_SUBSCRIPTION,
+            { userId: req.user.id }
+        )
+
+        return res.status(200).json(success("Payment successfully", {}))
     } catch (error) {
         next(error)
     }
@@ -234,13 +254,15 @@ export const get = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
-export const settlement = async (req: Request, res: Response, next: NextFunction) => {
+export const settlement = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
     try {
-        console.log({ settlemntBody: req.body });
+        console.log({ settlemntBody: req.body })
 
-        return res
-            .status(200)
-            .json(success("Payment settled", {}))
+        return res.status(200).json(success("Payment settled", {}))
     } catch (error) {
         next(error)
     }

@@ -5,6 +5,7 @@ import { catchError, success, tryPromise } from "../../common/utils"
 import PlanService from "./service"
 import SubscriptionService from "../subscriptions/service"
 import { Op } from "sequelize"
+import { getNairaRate } from "../wallets/helper"
 
 export const create = async (
     req: Request,
@@ -46,12 +47,26 @@ export const fetch = async (
                 String(nextPage),
                 String(prev)
             )
-        )) as any
+        )) as any;
         if (error) throw catchError("Error processing your request", 400)
+            let result = plan
+        const nairaRate = await getNairaRate();
+        if (nairaRate) {
+            result?.edges.map((reslt: any) => {
+                if (reslt.currency.toUpperCase() === "USD") {
+                    return { ...reslt, nairaRate, amountInNaira: Number(reslt.amount) * nairaRate  }
+                } else {
+                    return { ...reslt, nairaRate }
+                }
+            })
+
+        }
+
+
 
         return res
             .status(200)
-            .json(success("Record fetched successfully", plan))
+            .json(success("Record fetched successfully", result))
     } catch (error) {
         next(error)
     }
