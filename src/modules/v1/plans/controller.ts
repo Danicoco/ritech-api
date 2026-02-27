@@ -37,32 +37,34 @@ export const fetch = async (
         let [plan, error] = (await tryPromise(
             new PlanService({}).findAll(
                 {
-                    ...((search && {
+                    ...(search && {
                         name: {
                             [Op.iLike]: `%${search}%`,
                         },
-                    })),
+                    }),
                 },
                 Number(limit),
                 String(nextPage),
                 String(prev)
             )
-        )) as any;
+        )) as any
         if (error) throw catchError("Error processing your request", 400)
-            let result = plan
-        const nairaRate = await getNairaRate();
+        let result = plan
+        const nairaRate = await getNairaRate()
         if (nairaRate) {
-            result?.edges.map((reslt: any) => {
-                if (reslt.currency.toUpperCase() === "USD") {
-                    return { ...reslt, nairaRate, amountInNaira: Number(reslt.amount) * nairaRate  }
-                } else {
-                    return { ...reslt, nairaRate }
+        const newEdge = result?.edges.map((reslt: any) => {
+            if (reslt.currency.toUpperCase() === "USD") {
+                return {
+                    ...reslt,
+                    nairaRate: Number((nairaRate.toFixed(2))),
+                    amountInNaira: (Number(reslt.amount) * Number((nairaRate.toFixed(2)))).toFixed(2),
                 }
-            })
-
-        }
-
-
+            } else {
+                return { ...reslt, nairaRate }
+            }
+        })
+        if (result?.edges) result.edges = newEdge
+    }
 
         return res
             .status(200)
