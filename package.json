@@ -31,6 +31,11 @@
     "lint": "eslint --ext .ts --ignore-path .gitignore .",
     "migrate:u:a": "yarn sequelize-cli db:migrate:undo:all",
     "migration": "yarn sequelize-cli migration:create --name",
+    "docker:build": "docker build -t ritech-api .",
+    "docker:run": "docker run -d --restart unless-stopped -p 5001:5001 --env-file .env --name ritech-api-container ritech-api",
+    "docker:delete": "docker rm ritech-api-container",
+    "docker:restart": "docker restart ritech-api-container",
+    "docker:stats": "docker stats",
     "restart": "yarn && yarn build && pm2 restart RITECH_API"
   },
   "dependencies": {
