@@ -297,7 +297,7 @@ type StaticVirtualAccount = {
             }
         }
     }
-    beneficiarytocredit: {
+    beneficiarytocredit?: {
         accountumber: string
         bankcode: string
         feeamount: number;

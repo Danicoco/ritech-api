@@ -80,10 +80,10 @@ export const composeVirtual = ({ user, amount, description, accountNumber, bankC
                 }
             }
         },
-        beneficiarytocredit: {
-            accountumber:accountNumber,
-            bankcode: bankCode,
-            feeamount: Number(fee)
-        }
+        // beneficiarytocredit: {
+        //     accountumber:accountNumber,
+        //     bankcode: bankCode,
+        //     feeamount: Number(fee)
+        // }
     }
 }
