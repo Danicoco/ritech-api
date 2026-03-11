@@ -282,7 +282,7 @@ type StaticVirtualAccount = {
         reference: string
     }
     order: {
-        amount: number
+        amount: number | string
         currency: "NGN"
         description: string
         country: "NGA"

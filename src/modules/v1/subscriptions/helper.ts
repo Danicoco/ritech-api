@@ -65,7 +65,7 @@ export const composeVirtual = ({ user, amount, description, accountNumber, bankC
             reference: createReference('RIT'),
         },
         order: {
-            amount,
+            amount: Number(amount).toFixed(2),
             country: 'NGA',
             currency: 'NGN',
             description,
