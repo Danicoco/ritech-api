@@ -29,7 +29,7 @@ const sendMail = async ({ name, email, subject, message }: IMail) => {
                 subject: subject,
                 htmlbody: `<div>${message}</div>`,
             })
-            .then((resp: unknown) => console.log(resp, "success")).catch((error: Error) => console.log("error", error.message));
+            .then((resp: unknown) => console.log(resp, "success")).catch((error: Error) => console.log("error", error));
     })
 }
 
