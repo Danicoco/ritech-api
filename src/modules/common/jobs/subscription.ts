@@ -107,6 +107,17 @@ export const deactivateSubscription = async (agenda: Agenda) => {
     )
 }
 
+(async () => {    
+    const transaction = await new PSB9().confirmPayment({
+            reference: "RIT-889480801-1774958211514",
+            sessionid: "",
+            amount: 2,
+            accountnumber: "5890000480",
+        })
+
+        console.log("Transaction details From Self: ", transaction);
+})();
+
 // Fund naira wallet
 export const subscribeAfterPayment = async (agenda: Agenda) => {
     agenda.define(Queue_Identifier.INITIATE_SUBSCRIPTION, async (job, done) => {
@@ -130,6 +141,8 @@ export const subscribeAfterPayment = async (agenda: Agenda) => {
             amount,
             accountnumber: accountNumber,
         })
+
+        console.log("Transaction details: ", transaction);
 
         if (!transaction?.transactions?.length)
             throw catchError(
