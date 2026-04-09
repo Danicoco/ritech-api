@@ -166,10 +166,10 @@ export const getReports = async (
     res: Response,
     next: NextFunction
 ) => {
-    const { start, length } = req.query;
+    const { start, length, account_id } = req.query;
     try {
         const [reports, error] = await tryPromise(
-            new TradeCopier().getReporting({ start: Number(start), length: Number(length) })
+            new TradeCopier().getReporting({ start: Number(start), length: Number(length), ...(account_id && {account_id: String(account_id)}) })
         );
 
         if (error) {

@@ -365,7 +365,7 @@ class TradeCopier {
         return data
     }
 
-    public async getReporting(payload: { start: number; length: number }) {
+    public async getReporting(payload: { start: number; length: number; account_id?: string }) {
         const { data } = await this.http()
             .post("/reporting/getReporting.php", this.getBody(payload))
             .catch((e: AxiosError) => {
@@ -415,4 +415,4 @@ class TradeCopier {
     }
 }
 
-export default TradeCopier
+export default TradeCopier;
