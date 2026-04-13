@@ -330,6 +330,8 @@ export const deleteCopier = async (
     try {
         console.log({accountId});
         await new TradeCopier().deleteAccount(accountId as string);
+        // @ts-ignore
+        await new UserService({ id: req.user.id }).update({ meta: null })
 
         return res.status(200).json(
             success(`Copier account delete successfully`, {})
